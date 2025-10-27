@@ -3,60 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Jeux - Layout Full Screen & Animé</title>
+    <title>Dashboard Jeux - Connexion & Gestion (Pro Design V4)</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
     <style>
         /* -------------------
-           VARIABLES DE THÈMES CSS
+           VARIABLES DE THÈMES CSS (MODERNISÉES)
            ------------------- */
         :root {
             --font-family: 'Poppins', sans-serif;
-            --bg-body: #eef2f7;
-            --bg-container: #ffffff;
-            --bg-sidebar: #f8f9fa;
-            --text-main: #212529;
-            --text-heading: #007bff;
+            --bg-body: #f7f9fc; 
+            --bg-container: #ffffff; 
+            --bg-sidebar: #eef2f7; 
+            --text-main: #333333;
+            --text-heading: #1e40ff; 
             --text-sub: #6c757d;
-            --input-border: #ced4da;
-            --input-focus-shadow: rgba(0, 123, 255, 0.3);
-            --btn-primary: #28a745;
-            --btn-primary-hover: #218838;
+            --input-border: #e0e6ed;
+            --input-focus-shadow: rgba(30, 64, 255, 0.4);
+            --btn-primary: #1e40ff; 
+            --btn-primary-hover: #1c38e0;
             --btn-secondary: #dc3545;
             --btn-secondary-hover: #c82333;
-            --link-color: #007bff;
-            --game-link-bg: #f8f9fa;
-            --game-link-border: #e9ecef;
-            --box-shadow-container: 0 25px 50px rgba(0, 0, 0, 0.15);
+            --link-color: #1e40ff;
+            --game-link-bg: #ffffff;
+            --game-link-border: #eef2f7;
+            --box-shadow-container: 0 15px 40px rgba(0, 0, 0, 0.1); 
             --info-bg: #f5f5f5;
-            --stat-color: #28a745;
-            --tab-active-bg: #007bff;
-            --tab-active-text: #ffffff;
+            --stat-color: #059669; 
+            --tab-active-bg: #ffffff;
+            --tab-active-text: #1e40ff;
             --tab-inactive-bg: transparent;
+            --icon-color: #6b7280;
+            
+            /* Thème flottant */
+            --theme-toggle-bg: #e0e6ed;
+            --theme-toggle-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
         /* THÈME DARK MODE */
         body.dark-mode {
-            --bg-body: #0d1117;
-            --bg-container: #161b22;
-            --bg-sidebar: #1e293b; 
-            --text-main: #c9d1d9;
+            --bg-body: #121212;
+            --bg-container: #1e1e1e;
+            --bg-sidebar: #252525; 
+            --text-main: #e0e0e0;
             --text-heading: #58a6ff;
-            --text-sub: #8b949e;
-            --input-border: #30363d;
+            --text-sub: #a0a0a0;
+            --input-border: #303030;
             --input-focus-shadow: rgba(88, 166, 255, 0.4);
-            --btn-primary: #2ea043;
-            --btn-primary-hover: #268735;
+            --btn-primary: #58a6ff;
+            --btn-primary-hover: #4a90d9;
             --btn-secondary: #f85149;
             --btn-secondary-hover: #cf3832;
             --link-color: #58a6ff;
-            --game-link-bg: #21262d;
-            --game-link-border: #30363d;
-            --box-shadow-container: 0 25px 50px rgba(0, 0, 0, 0.4);
-            --info-bg: #21262d;
-            --stat-color: #2ea043;
-            --tab-active-bg: #58a6ff;
-            --tab-active-text: #161b22;
+            --game-link-bg: #2d2d2d;
+            --game-link-border: #3d3d3d;
+            --box-shadow-container: 0 15px 40px rgba(0, 0, 0, 0.6);
+            --info-bg: #2d2d2d;
+            --stat-color: #38c172;
+            --tab-active-bg: #1e1e1e;
+            --tab-active-text: #58a6ff;
             --tab-inactive-bg: transparent;
+            --icon-color: #a0a0a0;
+            
+            --theme-toggle-bg: #303030;
+            --theme-toggle-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
 
         /* THÈME CYBERPUNK MODE */
@@ -82,21 +94,12 @@
             --tab-active-bg: #ff00ff;
             --tab-active-text: #1a021a;
             --tab-inactive-bg: transparent;
+            --icon-color: #00ffc8;
+            
+            --theme-toggle-bg: #ff00ff;
+            --theme-toggle-shadow: 0 0 15px #ff00ff;
         }
         
-        body.cyberpunk-mode .dashboard-container {
-            backdrop-filter: blur(8px); 
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 0, 255, 0.2);
-        }
-
-        @keyframes scanline { to { background-position: 0 100%; } }
-        body.cyberpunk-mode::before {
-            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: repeating-linear-gradient(0deg, var(--bg-body), var(--bg-body) 1px, transparent 1px, transparent 30px);
-            opacity: 0.1; z-index: -1; animation: scanline 10s linear infinite;
-        }
-
         /* -------------------
            KEYFRAMES & ANIMATIONS
            ------------------- */
@@ -104,18 +107,18 @@
             from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 var(--shadow-color-pulse); }
-            100% { box-shadow: 0 0 0 15px rgba(0, 0, 0, 0); }
+        @keyframes subtleShake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-1px); }
+            50% { transform: translateX(1px); }
+            75% { transform: translateX(-1px); }
+            100% { transform: translateX(0); }
         }
 
         /* -------------------
-           LAYOUT GLOBAL FULL SCREEN
+           LAYOUT GLOBAL
            ------------------- */
-        html, body {
-            height: 100%; 
-            width: 100%;
-        }
+        html, body { height: 100%; width: 100%; }
 
         body {
             font-family: var(--font-family);
@@ -134,38 +137,85 @@
         .container-centered {
             background-color: var(--bg-container);
             padding: 50px; 
-            border-radius: 20px;
+            border-radius: 24px;
             box-shadow: var(--box-shadow-container);
-            width: 400px; 
+            width: 420px; 
             max-width: 90%;
             text-align: center;
+            transition: all 0.4s ease;
         }
         
         .page { display: none; }
         .page.active { display: block; }
         
-        /* Dashboard Container : FULL SCREEN */
+        /* Dashboard Container : FULL SCREEN AVEC BORDURES LÉGÈRES */
         .dashboard-container {
+            position: relative; /* Nécessaire pour le sélecteur flottant */
             display: grid;
-            grid-template-columns: 240px 1fr; 
-            width: 100vw; 
-            height: 100vh; 
-            max-width: none; 
-            max-height: none;
-            border-radius: 0; 
-            box-shadow: none; 
+            grid-template-columns: 280px 1fr;
+            width: 95vw; 
+            height: 90vh; 
+            border-radius: 20px; 
+            box-shadow: var(--box-shadow-container);
             overflow: hidden;
             background-color: var(--bg-container);
         }
         
         /* -------------------
-           INPUTS & FORMULAIRES (Non modifié)
+           SÉLECTEUR DE THÈME FLOTTANT (NOUVEAU)
+           ------------------- */
+        #theme-toggle-floating {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            z-index: 10;
+            display: flex;
+            background-color: var(--theme-toggle-bg);
+            border-radius: 12px;
+            padding: 5px;
+            box-shadow: var(--theme-toggle-shadow);
+            transition: all 0.4s ease;
+            max-width: 150px; 
+        }
+
+        #theme-toggle-floating button {
+            width: 40px; 
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            padding: 0;
+            margin: 0 2px;
+            background: none;
+            color: var(--icon-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: none; /* Retirer l'ombre par défaut des boutons */
+            font-size: 1.2em;
+        }
+
+        #theme-toggle-floating button.active {
+            background-color: var(--text-heading);
+            color: white;
+            box-shadow: 0 0 10px rgba(30, 64, 255, 0.4);
+            transform: scale(1.1);
+        }
+
+        #theme-toggle-floating button:hover:not(.active) {
+            color: var(--text-heading);
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        /* -------------------
+           INPUTS & FORMULAIRES (INCHANGÉS) 
            ------------------- */
         .input-group { margin-bottom: 25px; text-align: left; }
-        .input-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.95em; color: var(--text-main); }
+        .input-group label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9em; color: var(--text-sub); }
         
         .input-group input {
-            width: 100%; padding: 14px; border: 1px solid var(--input-border); border-radius: 10px; box-sizing: border-box; 
+            width: 100%; padding: 16px; border: 2px solid var(--input-border); border-radius: 12px; box-sizing: border-box; 
             transition: border-color 0.3s, box-shadow 0.3s; font-size: 16px; background-color: var(--bg-container); color: var(--text-main);
         }
         .input-group input:focus {
@@ -175,194 +225,153 @@
         }
 
         /* -------------------
-           BOUTONS GÉNÉRAUX (AMÉLIORÉ)
+           BOUTONS GÉNÉRAUX (INCHANGÉS SAUF LES BOUTONS FLOTTANTS)
            ------------------- */
-        button {
-            --shadow-color-pulse: rgba(40, 167, 69, 0.4);
-            width: 100%; padding: 16px; color: white; border: none; border-radius: 10px; cursor: pointer;
-            font-size: 18px; font-weight: 600; margin-top: 20px; 
-            background-color: var(--btn-primary);
-            /* Nouveau style d'ombre plus profonde */
-            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.4), 0 4px 5px rgba(0,0,0,0.2); 
-            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+        
+        button:not(.tab-button):not(.nav-link):not(#theme-toggle-floating button) {
+            --shadow-color-pulse: rgba(30, 64, 255, 0.4);
+            
+            width: 100%; 
+            padding: 16px; 
+            color: white; 
+            border: none; 
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.1em; 
+            font-weight: 600; 
+            margin-top: 20px; 
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2); 
+            
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            
+            background-image: linear-gradient(135deg, var(--btn-primary), var(--btn-primary-hover));
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2); 
         }
-        button:hover {
-            background-color: var(--btn-primary-hover);
-            transform: translateY(-3px); /* Montée plus prononcée */
-            box-shadow: 0 12px 25px rgba(40, 167, 69, 0.6), 0 4px 5px rgba(0,0,0,0.2); /* Ombre au survol */
-            animation: pulse 1s infinite;
+        
+        button:not(.tab-button):not(.nav-link):not(#theme-toggle-floating button):hover {
+            background-image: linear-gradient(135deg, var(--btn-primary-hover), var(--btn-primary));
+            transform: translateY(-4px) scale(1.01); 
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3); 
         }
-        button:active { 
-            transform: translateY(0); /* Simule l'effet de pression */
-            box-shadow: 0 2px 10px rgba(40, 167, 69, 0.4), 0 1px 2px rgba(0,0,0,0.2);
+        
+        button:not(.tab-button):not(.nav-link):not(#theme-toggle-floating button):active { 
+            transform: translateY(-1px) scale(1.00); 
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
         }
-
+        
         .nav-link { 
-            background: none; color: var(--link-color); width: auto; font-weight: 600; opacity: 1; margin-top: 25px; 
-            box-shadow: none; /* Enlève l'ombre du bouton principal */
-            transition: color 0.2s;
+            background: none !important; color: var(--link-color); width: auto; font-weight: 600; padding: 10px 0; opacity: 1; margin-top: 25px; box-shadow: none !important; text-shadow: none !important; transition: color 0.2s, transform 0.2s;
         }
         .nav-link:hover {
-            color: var(--text-heading);
-            transform: none;
-            text-decoration: underline;
-            animation: none;
+            color: var(--text-heading); transform: translateX(2px); text-decoration: underline;
+        }
+        
+        #logout-btn {
+            background-image: linear-gradient(135deg, var(--btn-secondary), var(--btn-secondary-hover));
+            box-shadow: 0 8px 15px rgba(220, 53, 69, 0.3);
+        }
+        #logout-btn:hover { 
+            background-image: linear-gradient(135deg, var(--btn-secondary-hover), var(--btn-secondary));
+            box-shadow: 0 15px 30px rgba(220, 53, 69, 0.5);
+        }
+        
+        #password-change-form button, #delete-account-btn, #reset-theme-btn {
+            padding: 10px 20px; font-size: 1em; margin-top: 15px; width: auto; border-radius: 8px; box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        #delete-account-btn {
+            background-image: linear-gradient(135deg, #dc3545, #c82333); 
+        }
+        #delete-account-btn:hover { 
+            background-image: linear-gradient(135deg, #c82333, #dc3545);
+        }
+
+        #password-change-form button {
+            background-image: linear-gradient(135deg, #ff9800, #fb8c00); 
+        }
+        #password-change-form button:hover { 
+            background-image: linear-gradient(135deg, #fb8c00, #ff9800);
         }
         
         /* -------------------
-           BARRE LATÉRALE (SIDEBAR) - BOUTONS AMÉLIORÉS
+           SIDEBAR / MAIN CONTENT / CARTES (INCHANGÉS)
            ------------------- */
         #sidebar {
             background-color: var(--bg-sidebar);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            border-right: 1px solid var(--input-border);
         }
 
         #sidebar h2 {
-            font-size: 1.5em;
-            margin: 0; 
-            padding: 30px 20px 20px 20px; 
-            text-align: left;
-            border-bottom: 1px solid var(--input-border);
-            font-weight: 700;
+            font-size: 1.6em; margin: 0; padding: 30px 25px 20px 25px; text-align: left; border-bottom: 1px solid var(--input-border); font-weight: 800; color: var(--text-heading);
         }
 
-        .tab-nav {
-            padding: 20px 0; 
-        }
+        .tab-nav { padding: 20px 0; }
 
         .tab-button {
-            width: 100%;
-            padding: 18px 25px; 
-            text-align: left;
-            font-weight: 600;
-            background-color: var(--tab-inactive-bg);
-            color: var(--text-main);
-            border: none;
-            border-left: 5px solid transparent;
-            transition: background-color 0.3s, border-left 0.3s, transform 0.2s, box-shadow 0.3s;
-            margin-top: 0 !important; 
-            border-radius: 0;
-            font-size: 1.05em;
-            box-shadow: none; /* Assure qu'ils n'ont pas l'ombre des boutons principaux */
+            width: 100%; padding: 18px 25px; text-align: left; font-weight: 600; background-color: var(--tab-inactive-bg); color: var(--text-main); border: none; border-left: 4px solid transparent; transition: all 0.2s ease-out; margin-top: 0 !important; border-radius: 0; font-size: 1.05em; box-shadow: none !important; background-image: none !important; text-shadow: none !important;
+        }
+
+        .tab-button i {
+            margin-right: 15px; width: 20px; color: var(--icon-color); transition: color 0.2s;
         }
 
         .tab-button:hover {
-            background-color: var(--info-bg);
-            transform: translateX(8px) scale(1.01); /* Mouvement plus visible */
-            box-shadow: 5px 0 15px -5px rgba(0, 0, 0, 0.1); /* Nouvelle ombre subtile */
-            animation: none;
+            background-color: var(--info-bg); color: var(--text-main); transform: translateX(5px) scale(1.01); box-shadow: none !important; 
         }
 
         .tab-button.active {
-            background-color: var(--bg-container);
-            color: var(--text-heading);
-            border-left: 5px solid var(--text-heading);
-            box-shadow: 2px 0 10px -5px var(--text-heading); /* Ombre de l'onglet actif */
-            transform: none; 
+            background-color: var(--bg-container); color: var(--text-heading); border-left: 4px solid var(--text-heading); box-shadow: 2px 0 10px -5px var(--text-heading); transform: none !important;
         }
 
-        #logout-btn {
-            background-color: var(--btn-secondary);
-            width: 80%;
-            margin: 0 auto 20px auto; 
-        }
-        #logout-btn:hover { 
-            background-color: var(--btn-secondary-hover); 
-            --shadow-color-pulse: rgba(220, 53, 69, 0.4);
-        }
+        .tab-button.active i { color: var(--text-heading); }
         
-        /* -------------------
-           CONTENU PRINCIPAL (Non modifié)
-           ------------------- */
         #main-content {
-            padding: 40px; 
-            overflow-y: auto; 
-            height: 100%; 
-            box-sizing: border-box;
-            text-align: left;
+            padding: 50px; overflow-y: auto; height: 100%; box-sizing: border-box; text-align: left;
         }
 
-        #main-content h2 { margin-top: 0; margin-bottom: 30px; font-size: 2.2em; font-weight: 800; }
+        #main-content h2 { margin-top: 0; margin-bottom: 30px; font-size: 2.4em; font-weight: 800; }
         #main-content h3 { margin-bottom: 25px; font-size: 1.6em; color: var(--text-heading); border-bottom: 1px solid var(--input-border); padding-bottom: 10px; }
         
         .tab-content {
-            display: none;
-            opacity: 0; 
-            transform: translateY(15px);
-            animation: fadeInTab 0.4s ease-out forwards; 
+            display: none; opacity: 0; transform: translateY(15px); animation: fadeInTab 0.4s ease-out forwards; 
         }
         .tab-content.active { display: block; }
-        .tab-content.active:not(:first-child) { 
-             animation: none; 
-             animation: fadeInTab 0.4s ease-out forwards;
-        }
-
-        /* -------------------
-           SECTIONS SPÉCIFIQUES (Boutons ajustés)
-           ------------------- */
+        
         .account-info, .stat-card {
-            background-color: var(--info-bg);
-            padding: 20px; 
-            border-radius: 12px;
-            margin-bottom: 30px; 
-            font-size: 1em;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            background-color: var(--bg-container); padding: 25px; border-radius: 16px; margin-bottom: 30px; font-size: 1em; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border: 1px solid var(--input-border); transition: all 0.3s ease;
         }
-        .account-info h4 { margin-top: 0; margin-bottom: 15px; font-weight: 700; color: var(--text-heading); }
-        .account-info p { margin: 8px 0; }
-        
-        .game-link {
-            padding: 18px 25px; 
-            border-radius: 15px;
-            font-size: 1.1em;
-            transition: all 0.3s ease-out, box-shadow 0.3s;
-        }
-        /* Maintient l'effet 3D des liens de jeu */
-        .game-link:hover {
-            background-color: var(--link-color); color: var(--bg-container); 
-            transform: translateY(-5px) rotateX(5deg) rotateY(5deg) scale(1.02);
-            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3), 0 0 15px var(--link-color);
+        .account-info:hover, .stat-card:hover {
+             transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         }
 
-        /* Thème switcher */
-        .theme-switcher { margin-bottom: 20px; }
-        .theme-switcher button { 
-            padding: 10px 0; font-size: 1em; margin-top: 0;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2); /* Ombre plus douce pour les petits boutons */
+        .account-info h4 { 
+            margin-top: 0; margin-bottom: 15px; font-weight: 700; color: var(--text-heading); display: flex; align-items: center;
         }
-        .theme-switcher button:hover {
-             transform: translateY(-1px);
-             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-             animation: none;
+        .account-info h4 i { margin-right: 10px; font-size: 1.2em; }
+        .account-info p { margin: 10px 0; font-size: 0.95em; }
+        .stat-card strong { color: var(--stat-color); font-weight: 700; font-size: 1.2em; margin-left: 5px; }
+        
+        /* LIENS DE JEUX (INCHANGÉS) */
+        .game-link {
+            display: flex; justify-content: space-between; align-items: center; text-decoration: none; color: var(--text-main); background-color: var(--game-link-bg); border: 1px solid var(--game-link-border); margin-bottom: 15px; padding: 20px 30px; border-radius: 16px; font-size: 1.1em; font-weight: 600; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05); transition: all 0.3s ease-out;
         }
         
-        #reset-theme-btn { margin-top: 10px; }
-        #reset-theme-btn:hover { 
-            transform: translateY(-2px);
-            box-shadow: 0 8px 15px rgba(63, 81, 181, 0.5); 
+        .game-link span:last-child {
+            color: var(--btn-primary); font-size: 1.5em; transition: transform 0.3s;
         }
-        
+
+        .game-link:hover {
+            border-color: var(--link-color); transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15), 0 0 10px var(--link-color);
+        }
+
+        .game-link:hover span:last-child {
+            transform: translateX(5px) scale(1.1); animation: subtleShake 0.6s infinite alternate; 
+        }
+
         #password-change-form {
-            padding: 30px;
-            background-color: var(--info-bg);
-            border-radius: 12px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-        }
-        
-        #password-change-form button, #delete-account-btn { 
-            width: auto; 
-            padding:12px 25px; /* Ajusté */
-            font-size: 1em; /* Ajusté */
-            margin-top: 15px; 
-            animation: none !important; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2); /* Ombre standard */
-        }
-        #password-change-form button:hover, #delete-account-btn:hover {
-             transform: translateY(-2px);
+            padding: 30px; background-color: var(--info-bg); border-radius: 16px; margin-bottom: 30px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
         }
     </style>
 </head>
@@ -379,12 +388,12 @@
                 <label for="signup-password">Mot de passe</label>
                 <input type="password" id="signup-password" required>
             </div>
-            <button type="submit">S'inscrire</button>
+            <button type="submit"><i class="fas fa-user-plus"></i> S'inscrire</button>
         </form>
         <button class="nav-link" onclick="showPage('login-page')">J'ai déjà un compte (Se connecter)</button>
     </section>
 
-    <section id="login-page" class="page container-centered">
+    <section id="login-page" class="page container-centered active">
         <h2>Connexion</h2>
         <form id="login-form">
             <div class="input-group">
@@ -395,25 +404,30 @@
                 <label for="login-password">Mot de passe</label>
                 <input type="password" id="login-password" required>
             </div>
-            <button type="submit">Se connecter</button>
+            <button type="submit"><i class="fas fa-sign-in-alt"></i> Se connecter</button>
         </form>
         <button class="nav-link" onclick="showPage('signup-page')">Pas encore de compte ? (S'inscrire)</button>
     </section>
 
     <section id="dashboard-page" class="page dashboard-container">
         
+        <div id="theme-toggle-floating">
+            <button class="theme-btn" data-theme="light-mode" onclick="setTheme('light-mode')" title="Thème Jour (Light)"><i class="fas fa-sun"></i></button>
+            <button class="theme-btn" data-theme="dark-mode" onclick="setTheme('dark-mode')" title="Thème Nuit (Dark)"><i class="fas fa-moon"></i></button>
+            <button class="theme-btn" data-theme="cyberpunk-mode" onclick="setTheme('cyberpunk-mode')" title="Thème Cyberpunk"><i class="fas fa-robot"></i></button>
+        </div>
         <div id="sidebar">
             <div class="nav-top">
                 <h2 id="sidebar-welcome-message">Dashboard</h2>
                 
                 <div class="tab-nav">
-                    <button class="tab-button active" data-tab="home" onclick="showTab('home')">🏠 Accueil & Stats</button>
-                    <button class="tab-button" data-tab="games" onclick="showTab('games')">🎮 Mes Jeux</button>
-                    <button class="tab-button" data-tab="settings" onclick="showTab('settings')">⚙️ Paramètres</button>
+                    <button class="tab-button active" data-tab="home" onclick="showTab('home')"><i class="fas fa-home"></i> Accueil & Stats</button>
+                    <button class="tab-button" data-tab="games" onclick="showTab('games')"><i class="fas fa-gamepad"></i> Mes Jeux</button>
+                    <button class="tab-button" data-tab="settings" onclick="showTab('settings')"><i class="fas fa-cog"></i> Paramètres</button>
                 </div>
             </div>
 
-            <button id="logout-btn">Se déconnecter</button>
+            <button id="logout-btn"><i class="fas fa-power-off"></i> Se déconnecter</button>
         </div>
 
         <div id="main-content">
@@ -424,41 +438,37 @@
                 <div id="home-tab" class="tab-content active">
                     
                     <div class="stat-card">
+                        <i class="fas fa-trophy" style="color:var(--stat-color); margin-right: 10px;"></i>
                         <span>Dernier Jeu Lancé :</span>
                         <strong id="last-played-game">Aucun</strong>
                     </div>
 
                     <div class="account-info">
-                        <h4>👤 Statistiques du Compte</h4>
+                        <h4><i class="fas fa-user-circle"></i> Statistiques du Compte</h4>
                         <p>Date de Création : <strong id="account-creation-date">...</strong></p>
                         <p>Connexions Totales : <strong id="account-total-logins">...</strong></p>
                         <p>Dernière Connexion : <strong id="account-last-login">...</strong></p>
                     </div>
                     
-                    <h4>🎨 Changer le Thème</h4>
-                    <div class="theme-switcher">
-                        <button class="theme-btn" data-theme="light-mode" onclick="setTheme('light-mode')">☀️ Light</button>
-                        <button class="theme-btn" data-theme="dark-mode" onclick="setTheme('dark-mode')">🌙 Dark</button>
-                        <button class="theme-btn" data-theme="cyberpunk-mode" onclick="setTheme('cyberpunk-mode')">👾 Cyberpunk</button>
                     </div>
-                    <button id="reset-theme-btn" onclick="resetTheme()">Réinitialiser le Thème par défaut</button>
-                </div>
 
                 <div id="games-tab" class="tab-content">
-                    <h3>Sélectionnez votre aventure</h3>
-                    <a href="Tower defende Officiel.html" data-game-name="Tower Defense Officiel" target="_blank" class="game-link"><span>Tower Defense Officiel</span> <span>▶️</span></a>
-                    <a href="skibidi tower defense test.html" data-game-name="Skibidi Tower Defense Test" target="_blank" class="game-link"><span>Skibidi Tower Defense Test</span> <span>▶️</span></a>
-                    <a href="mini_rpg_particles_fixed_starfield_deep.html" data-game-name="Mini survival game (RPG)" target="_blank" class="game-link"><span>Mini survival game (RPG)</span> <span>▶️</span></a>
-                    <a href="Idle Hero.html" data-game-name="Idle Hero" target="_blank" class="game-link"><span>Idle Hero</span> <span>▶️</span></a>
-                    <a href="clicker.html" data-game-name="Clicker Galactique" target="_blank" class="game-link"><span>Clicker Galactique</span> <span>▶️</span></a>
+                    <h3>🕹️ Lancez votre aventure</h3>
+                    
+                    <a href="https://thekilleryt53.github.io/mes-jeux-html/Tower%20defende%20Officiel.html" data-game-name="Tower Defense Officiel" target="_blank" class="game-link"><span>Tower Defense Officiel</span> <span><i class="fas fa-arrow-right"></i></span></a>
+                    <a href="https://thekilleryt53.github.io/mes-jeux-html/skibidi%20tower%20defense%20test.html" data-game-name="Skibidi Tower Defense Test" target="_blank" class="game-link"><span>Skibidi Tower Defense Test</span> <span><i class="fas fa-arrow-right"></i></span></a>
+                    <a href="https://thekilleryt53.github.io/mes-jeux-html/mini_rpg_particles_fixed_starfield_deep.html" data-game-name="Mini survival game (RPG)" target="_blank" class="game-link"><span>Mini survival game (RPG)</span> <span><i class="fas fa-arrow-right"></i></span></a>
+                    <a href="https://thekilleryt53.github.io/mes-jeux-html/Idle%20Hero.html" data-game-name="Idle Hero" target="_blank" class="game-link"><span>Idle Hero</span> <span><i class="fas fa-arrow-right"></i></span></a>
+                    <a href="https://thekilleryt53.github.io/mes-jeux-html/clicker.html" data-game-name="Clicker Galactique" target="_blank" class="game-link"><span>Clicker Galactique</span> <span><i class="fas fa-arrow-right"></i></span></a>
+                    
                 </div>
 
                 <div id="settings-tab" class="tab-content">
                     
-                    <h3>Gestion & Sécurité</h3>
+                    <h3>⚙️ Gestion & Sécurité</h3>
 
                     <form id="password-change-form">
-                        <h4>🔑 Changer de Mot de Passe</h4>
+                        <h4><i class="fas fa-lock"></i> Changer de Mot de Passe</h4>
                         <div class="input-group">
                             <label for="old-password">Ancien Mot de Passe</label>
                             <input type="password" id="old-password" required>
@@ -467,13 +477,13 @@
                             <label for="new-password">Nouveau Mot de Passe</label>
                             <input type="password" id="new-password" required>
                         </div>
-                        <button type="submit" style="background-color:#ff9800; width:auto; padding:12px 25px;">Confirmer le Changement</button>
+                        <button type="submit" style="background-image: linear-gradient(135deg, #ff9800, #fb8c00); width:auto; padding:12px 25px;"><i class="fas fa-key"></i> Confirmer le Changement</button>
                     </form>
 
                     <div class="management-buttons">
-                        <button id="delete-account-btn" style="background-color:#dc3545; width:auto; padding:12px 25px;">🗑️ Supprimer Mon Compte</button>
+                        <button id="delete-account-btn" style="background-image: linear-gradient(135deg, #dc3545, #c82333); width:auto; padding:12px 25px;"><i class="fas fa-trash-alt"></i> Supprimer Mon Compte</button>
                     </div>
-
+                    
                 </div>
             </div>
         </div>
@@ -512,10 +522,12 @@
         // --- GESTION DES THÈMES ---
         function setTheme(themeName) {
             const body = document.getElementById('body-theme-target');
-            body.className = themeName; 
+            body.classList.remove('light-mode', 'dark-mode', 'cyberpunk-mode'); 
+            body.classList.add(themeName); 
             localStorage.setItem(THEME_KEY, themeName);
             
-            document.querySelectorAll('.theme-btn').forEach(btn => {
+            // Mise à jour de l'état "actif" des boutons flottants
+            document.querySelectorAll('#theme-toggle-floating .theme-btn').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.getAttribute('data-theme') === themeName) {
                     btn.classList.add('active');
@@ -526,61 +538,57 @@
             const savedTheme = localStorage.getItem(THEME_KEY) || 'light-mode';
             setTheme(savedTheme);
         }
-        function resetTheme() {
+        // La fonction resetTheme n'est plus utile dans la Home Tab, mais on la garde au cas où
+        /* function resetTheme() {
             localStorage.removeItem(THEME_KEY);
             setTheme('light-mode');
             alert("Thème réinitialisé sur 'Light Mode'.");
-        }
-        document.addEventListener('DOMContentLoaded', loadTheme);
+        } */
 
 
         // --- GESTION DES PAGES ET DES ONGLETS (TABS) ---
         function showPage(pageId) {
             document.querySelectorAll('.page').forEach(page => {
-                if (page.id === 'dashboard-page') {
-                    page.classList.remove('active');
-                    page.style.display = 'none';
-                } else {
-                    page.classList.remove('active');
-                }
+                page.classList.remove('active');
+                page.style.display = 'none';
             });
             
             const targetPage = document.getElementById(pageId);
-            
+            const themeToggle = document.getElementById('theme-toggle-floating');
+
             if (pageId === 'dashboard-page') {
                 targetPage.style.display = 'grid';
                 targetPage.classList.add('active');
+                if (themeToggle) themeToggle.style.display = 'flex'; // Afficher le sélecteur de thème
                 
                 const user = getCurrentUser();
                 if (user) {
                     document.getElementById('dashboard-main-title').textContent = `Bienvenue, ${user.username} !`;
-                    document.getElementById('sidebar-welcome-message').textContent = `Menu | ${user.username}`;
+                    document.getElementById('sidebar-welcome-message').textContent = `${user.username}`;
                 }
                 showTab('home');
             } else {
+                targetPage.style.display = 'flex';
                 targetPage.classList.add('active');
+                if (themeToggle) themeToggle.style.display = 'none'; // Cacher le sélecteur sur les pages de login/signup
             }
         }
 
         function showTab(tabId) {
-            // Mettre à jour le titre du contenu principal
             const titles = {
-                'home': 'Aperçu du Compte et Thèmes',
+                'home': 'Aperçu du Compte et Statistiques',
                 'games': 'Ma Bibliothèque de Jeux',
                 'settings': 'Paramètres de Sécurité'
             };
             document.getElementById('dashboard-main-title').textContent = titles[tabId] || 'Dashboard';
 
-            // Cacher/afficher les contenus avec l'animation
             document.querySelectorAll('.tab-content').forEach(content => {
                 content.classList.remove('active');
             });
-            // Petit délai pour permettre à l'animation de reset avant d'appliquer la classe active
             setTimeout(() => {
                 document.getElementById(`${tabId}-tab`).classList.add('active');
-            }, 50); // Ajustez si l'animation ne se réinitialise pas bien
+            }, 50); 
 
-            // Activer/désactiver les boutons de la sidebar
             document.querySelectorAll('.tab-button').forEach(button => {
                 button.classList.remove('active');
             });
@@ -676,6 +684,8 @@
         function checkLoginStatus() {
             const isLoggedIn = localStorage.getItem(LOGGED_IN_KEY) === 'true';
             const currentUserStr = localStorage.getItem(CURRENT_USER_KEY);
+            
+            loadTheme(); // Charge le thème avant de déterminer la page
 
             if (isLoggedIn && currentUserStr) {
                 try {
