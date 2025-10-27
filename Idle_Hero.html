@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini Idle Heroes - Ultimate Edition (Prestige Amélioré)</title>
+<style>
+  body { background:#0f1724; color:#e6eef6; font-family:sans-serif; margin:0; padding:20px; display:flex; justify-content:center; align-items:flex-start; min-height:100vh; }
+  .app { display:grid; grid-template-columns:400px 1fr; gap:20px; max-width:1400px; width:100%; margin:0 auto; }
+  .panel { background:#0b1220; padding:20px; border-radius:10px; border:1px solid rgba(255,255,255,0.05); }
+  .hero-card { 
+      display:flex; justify-content:space-between; align-items:center; 
+      padding:10px; margin-bottom:8px; border:1px solid rgba(255,255,255,0.05); 
+      border-radius:6px; background:rgba(255,255,255,0.02); 
+      transition: border-color 0.2s;
+  }
+  .hero-card.prestige-upgrade { 
+      border:1px solid #ffc107; 
+      background:rgba(255, 193, 7, 0.05);
+  }
+  button { padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-weight:700; background:#1e3a5f; color:#fff; transition:0.2s; }
+  button:disabled { opacity:0.4; cursor:not-allowed; background:#333; }
+  button:not(:disabled):hover { background:#2a4d7f; transform:scale(1.05); }
+  button.upgrade { background:#28a745; }
+  button.upgrade:hover { background:#32c252; }
+  button.skill { background:#dc3545; padding:8px 16px; font-size:14px; }
+  button.skill:hover { background:#e54555; }
+  button.prestige { background:#ffc107; color:#000; padding:10px 20px; }
+  button.prestige:hover { background:#ffcd38; }
+  .gold { color:gold; font-weight:700; }
+  .prestige-point { color:#ffc107; font-weight:700; }
+  .arena { height:180px; background:#07182a; margin-bottom:10px; position:relative; border-radius:10px; overflow:hidden; }
+  .hpbar { position:absolute; top:10px; left:10px; right:10px; height:20px; background:rgba(255,255,255,0.05); border-radius:8px; }
+  .hp { height:100%; background:limegreen; border-radius:8px; width:100%; transition:width 0.3s; }
+  .enemy-sprite { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); font-size:60px; animation:bounce 2s infinite; }
+  @keyframes bounce { 0%,100% { transform:translateX(-50%) translateY(0); } 50% { transform:translateX(-50%) translateY(-10px); } }
+  .boss { font-size:80px !important; color:#ff4444; text-shadow:0 0 20px #ff0000; }
+  .log { max-height:100px; overflow:auto; background:rgba(255,255,255,0.02); padding:6px; border-radius:6px; font-size:12px; }
+  .slot { flex:1; background:#0b1220; padding:10px; border-radius:6px; text-align:center; border:2px solid rgba(255,255,255,0.1); min-height:60px; display:flex; flex-direction:column; align-items:center; justify-content:center; transition:0.2s; }
+  .slot:hover { border-color:#1e3a5f; transform:scale(1.02); }
+  .slot.filled { border-color:#1e3a5f; background:#0d1a2e; }
+  .stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px; }
+  .stat-box { background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; text-align:center; }
+  .equipment { display:flex; gap:5px; margin-top:5px; }
+  .equip-slot { width:25px; height:25px; background:rgba(255,255,255,0.05); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer; }
+  .skills { display:flex; gap:10px; margin-bottom:15px; }
+  .prestige-info { background:#1a0a00; border:2px solid #ffc107; padding:10px; border-radius:8px; margin-bottom:15px; }
+  .tab-container { display:flex; gap:5px; margin-bottom:10px; }
+  .tab { padding:8px 15px; background:rgba(255,255,255,0.05); border:none; border-radius:6px 6px 0 0; cursor:pointer; color:#888; }
+  .tab.active { background:#1e3a5f; color:#fff; }
+  .shop-container { max-height:450px; overflow-y:auto; padding-right:5px; }
+  .shop-container::-webkit-scrollbar { width:8px; }
+  .shop-container::-webkit-scrollbar-track { background:rgba(255,255,255,0.05); border-radius:4px; }
+  .shop-container::-webkit-scrollbar-thumb { background:#1e3a5f; border-radius:4px; }
+  h2, h3, h4 { margin-top:0; margin-bottom:12px; }
+  /* NOUVEAU STYLE : Mode d'Achat */
+  button.buyModeBtn { background:#0b1220; color:#888; border:1px solid #1e3a5f; padding:8px 10px; font-weight:400; flex:1; }
+  button.buyModeBtn.active { background:#1e3a5f; color:#fff; font-weight:700; }
+  button.buyModeBtn:not(:disabled):hover { background:#1e3a5f; color:#fff; transform:scale(1.02); }
+  /* FIN NOUVEAU STYLE */
+  /* NOUVEAU STYLE : Reliques */
+  .relic-slot { width:100%; height:70px; background:rgba(255,255,255,0.05); border-radius:8px; margin-bottom:10px; border:2px dashed #ffc107; display:flex; align-items:center; justify-content:center; font-size:14px; cursor:pointer; transition:0.2s; }
+  .relic-slot.filled { border:2px solid #ffc107; background:rgba(255, 193, 7, 0.1); }
+  .relic-card-mini { background:rgba(255,255,255,0.05); padding:8px; border-radius:4px; margin-bottom:4px; font-size:12px; display:flex; justify-content:space-between; align-items:center;}
+  .relic-card-mini:hover { background:rgba(255,255,255,0.1); }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="panel">
+    <h2>🎮 Mini Idle Heroes</h2>
+    <div class="stats">
+      <div class="stat-box">
+        <div>💰 Or</div>
+        <div class="gold" id="gold">50</div>
+      </div>
+      <div class="stat-box">
+        <div>🏦 Banque</div>
+        <div class="gold" id="banked">0</div>
+      </div>
+      <div class="stat-box">
+        <div>⚔️ DPS Total</div>
+        <div id="dps">0</div>
+      </div>
+      <div class="stat-box">
+        <div>⭐ Prestige Niv.</div>
+        <div id="prestige">0</div>
+      </div>
+      <div class="stat-box">
+        <div>💎 Points Prestige</div>
+        <div class="prestige-point" id="prestigePoints">0</div>
+      </div>
+    </div>
+
+    <div class="prestige-info" id="prestigeInfo">
+      <strong>🌟 Système de Prestige</strong><br>
+      <small>Bonus DPS de base actuel: +<span id="prestigeBonus">0</span>%</small><br>
+      <button class="prestige" id="prestigeBtn" disabled>Prestige (Niveau 50+)</button>
+    </div>
+
+<div class="tab-container">
+      <button class="tab active" id="tabShop">Boutique</button>
+      <button class="tab" id="tabEquip">Équipement</button>
+      <button class="tab" id="tabPrestigeUpgrades">Améliorations (PP)</button>
+      <button class="tab" id="tabRelics">Reliques</button> </div>
+
+    <h4 style="margin-top:0; margin-bottom:8px;">Mode d'Achat (Héros & Niveau)</h4>
+    <div id="buyModeContainer" style="display:flex; gap:5px; margin-bottom:15px;">
+      <button class="buyModeBtn active" data-mode="1">x1</button>
+      <button class="buyModeBtn" data-mode="10">x10</button>
+      <button class="buyModeBtn" data-mode="25">x25</button>
+      <button class="buyModeBtn" data-mode="100">x100</button>
+      <button class="buyModeBtn" data-mode="max">MAX</button>
+    </div>
+    <div id="shopContent" class="shop-container">
+      <div id="shop"></div>
+    </div>
+
+    <div id="equipContent" class="shop-container" style="display:none;">
+      <h4>⚔️ Équipement disponible</h4>
+      <div id="equipShop"></div>
+    </div>
+    
+    <div id="prestigeUpgradesContent" class="shop-container" style="display:none;">
+      <h4>💎 Améliorations Permanentes</h4>
+      <div id="prestigeUpgrades"></div>
+    </div>
+
+    <button id="collectBtn" style="width:100%; margin-top:10px;">💰 Collecter l'or</button>
+    <button id="saveBtn" style="width:100%; margin-top:5px; background:#28a745;">💾 Sauvegarder</button>
+  </div>
+
+  <div class="panel">
+    <div class="arena">
+      <div class="hpbar">
+        <div id="enemyHp" class="hp"></div>
+      </div>
+      <div class="enemy-sprite" id="enemySprite">👹</div>
+      <div style="text-align:center; padding-top:40px; font-size:18px;" id="enemyInfo">
+        <span id="enemyType">Goblin</span> Niv. <span id="enemyLevel">1</span>
+      </div>
+    </div>
+
+    <div class="skills">
+      <button class="skill" id="skill1">🔥 Boule de feu (CD: <span id="cd1">0</span>s)</button>
+      <button class="skill" id="skill2">⚡ Éclair (CD: <span id="cd2">0</span>s)</button>
+    </div>
+
+    <h3>⚔️ Party Actif</h3>
+    <div style="display:flex; gap:6px; margin-bottom:15px;">
+      <div id="slot0" class="slot">+ Ajouter</div>
+      <div id="slot1" class="slot">+ Ajouter</div>
+      <div id="slot2" class="slot">+ Ajouter</div>
+      <div id="slot3" class="slot">+ Ajouter</div>
+    </div>
+
+    <h3>📊 Stats du Party</h3>
+    <div id="partyStats" style="font-size:12px; background:rgba(255,255,255,0.02); padding:8px; border-radius:6px; margin-bottom:10px;">
+      Aucun héros dans le party
+    </div>
+
+    <h3>📜 Journal</h3>
+    <div id="log" class="log"></div>
+  </div>
+</div>
+
+<script>
+const HEROES = [
+    {id:'warrior',name:'⚔️ Aldric',baseDps:5,price:15,type:'tank', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'archer',name:'🏹 Lyra',baseDps:12,price:120,type:'dps', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'mage',name:'🔮 Ezra',baseDps:45,price:900,type:'mage', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'rogue',name:'🗡️ Shadow',baseDps:150,price:3500,type:'dps', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'paladin',name:'🛡️ Seraph',baseDps:200,price:6000,type:'tank', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'necro',name:'💀 Mortis',baseDps:500,price:18000,type:'mage', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'naga',name:'🐍 Nerra',baseDps:900,price:40000,type:'dps', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'dragon',name:'🐲 Drakar',baseDps:2000,price:95000,type:'tank', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'demon',name:'😈 Azrael',baseDps:5000,price:250000,type:'dps', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'angel',name:'👼 Celeste',baseDps:12000,price:650000,type:'mage', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'titan',name:'⚡ Zeus',baseDps:30000,price:1800000,type:'tank', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'phoenix',name:'🔥 Ignis',baseDps:80000,price:5000000,type:'dps', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'Satan',name:'⚔️ Satan',baseDps:125000,price:15000000,type:'tank', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'void_lord',name:'⚫ Seigneur du Vide',baseDps:175000,price:47500000,type:'tank', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'eternal_drg',name:'✨ Dragon Éternel',baseDps:325000,price:115000000,type:'dps', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'ancient_god',name:'👑 Dieu Antique',baseDps:635000,price:235000000,type:'mage', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'cosmic_sentinel',name:'🌌 Sentinelle Cosmique',baseDps:1500000,price:600000000,type:'tank', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'reality_weaver',name:'🌀 Tisseur de Réalité',baseDps:4000000,price:1800000000,type:'dps', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'alpha_omega',name:'☯️ Alpha & Oméga',baseDps:10000000,price:5000000000,type:'mage', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'time_traveler',name:'🕰️ Voyageur Temporel',baseDps:25000000,price:15000000000,type:'dps', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'celestial_forge',name:'🔨 Forgeron Céleste',baseDps:55000000,price:40000000000,type:'tank', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'quantum_phantom',name:'👻 Fantôme Quantique',baseDps:125000000,price:100000000000,type:'mage', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'star_eater',name:'🌠 Dévoreur d\'Étoiles',baseDps:280000000,price:250000000000,type:'dps', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'void_reaver',name:'🌑 Pillard du Néant',baseDps:600000000,price:600000000000,type:'tank', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'dream_walker',name:'💭 Marcheur de Rêves',baseDps:1300000000,price:1500000000000,type:'mage', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'nexus_protector',name:'⚛️ Protecteur de Nexus',baseDps:3000000000,price:4000000000000,type:'dps', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'infinity_slayer',name:'♾️ Tueur d\'Infini',baseDps:7500000000,price:10000000000000,type:'tank', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'genesis_creator',name:'✨ Créateur de Genèse',baseDps:18000000000,price:25000000000000,type:'mage', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'omni_king',name:'👑 Roi Omnipotent',baseDps:45000000000,price:65000000000000,type:'dps', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'cosmic_traveller',name:'🚀 Voyageur Cosmique',baseDps:100000000000,price:250000000000000,type:'mage', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'void_emperor',name:'⚫ Empereur du Vide',baseDps:300000000000,price:800000000000000,type:'tank', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'celestial_blade',name:'🔪 Lame Céleste',baseDps:800000000000,price:2500000000000000,type:'dps', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'infinity_guardian',name:'🛡️ Gardien Infini',baseDps:2000000000000,price:7500000000000000,type:'tank', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'genesis_spirit',name:'🌀 Esprit de Genèse',baseDps:5500000000000,price:25000000000000000,type:'mage', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'reality_breaker',name:'💥 Briseur de Réalité',baseDps:15000000000000,price:90000000000000000,type:'dps', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'chrono_titan',name:'⏳ Titan Chronos',baseDps:40000000000000,price:350000000000000000,type:'tank', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'omega_star',name:'🌠 Étoile Oméga',baseDps:110000000000000,price:1500000000000000000,type:'mage', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'absolute_ruler',name:'👑 Souverain Absolu',baseDps:300000000000000,price:6000000000000000000,type:'dps', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5},
+    {id:'celestial_god',name:'✨ Dieu Céleste',baseDps:850000000000000,price:25000000000000000000,type:'tank', tierUps: [10, 25, 50, 100, 125, 150], tierUpBonus: 0.5}
+];
+
+const EQUIPMENT=[
+    {id:'sword',name:'⚔️ Épée',bonus:0.15,price:500,stat:'dps'},
+    {id:'shield',name:'🛡️ Bouclier',bonus:0.10,price:800,stat:'dps'},
+    {id:'ring',name:'💍 Anneau',bonus:0.20,price:2000,stat:'dps'},
+    {id:'amulet',name:'📿 Amulette',bonus:0.25,price:5000,stat:'dps'},
+    {id:'crown',name:'👑 Couronne',bonus:0.35,price:10000,stat:'dps'},
+    {id:'gloves',name:'🧤 Gants',bonus:0.30,price:15000,stat:'dps'},
+    {id:'boots',name:'👢 Bottes',bonus:0.40,price:30000,stat:'dps'},
+    {id:'cape',name:'🦸 Cape',bonus:0.50,price:60000,stat:'dps'},
+    {id:'orb',name:'🔮 Orbe',bonus:0.60,price:120000,stat:'dps'},
+    {id:'relic',name:'✨ Relique',bonus:0.80,price:250000,stat:'dps'},
+    {id:'artifact',name:'⭐ Artéfact',bonus:1.00,price:500000,stat:'dps'},
+    {id:'legendary',name:'🏆 Légendaire',bonus:1.50,price:1000000,stat:'dps'},
+    {id:'sacre_tome',name:'📜 Tome Sacré',bonus:2.00,price:15000000,stat:'dps'},
+    {id:'gantelets',name:'🥊 Gantelets de Force',bonus:2.50,price:35000000,stat:'dps'},
+    {id:'artefact_anc',name:'🔱 Artéfact Ancien',bonus:3.50,price:75000000,stat:'dps'},
+    {id:'coeur_feu',name:'🔥 Cœur de la Fournaise',bonus:5.00,price:325000000,stat:'dps'},
+    {id:'epee_finale',name:'🔪 Lame Finale',bonus:7.50,price:15000000000,stat:'dps'},
+    {id:'divine_essence',name:'✨ Essence Divine',bonus:10.00,price:25000000000,stat:'dps'},
+    {id:'cosmic_helm',name:'⛑️ Casque Cosmique',bonus:12.50,price:60000000000,stat:'dps'},
+    {id:'chaos_armor',name:'⚫ Armure du Chaos',bonus:15.00,price:150000000000,stat:'dps'},
+    {id:'starfall_gauntlets',name:'🌠 Gantelets d\'Astre',bonus:18.00,price:350000000000,stat:'dps'},
+    {id:'singularity_amulet',name:'📿 Amulette Singularité',bonus:22.00,price:800000000000,stat:'dps'},
+    {id:'void_orb',name:'🔮 Orbe du Vide',bonus:26.00,price:2000000000000,stat:'dps'},
+    {id:'time_ring',name:'🕰️ Anneau Temporel',bonus:30.00,price:5000000000000,stat:'dps'},
+    {id:'omni_scroll',name:'📜 Parchemin Omniscient',bonus:35.00,price:12000000000000,stat:'dps'},
+    {id:'reality_shard',name:'🌀 Fragment de Réalité',bonus:40.00,price:30000000000000,stat:'dps'},
+    {id:'genesis_key',name:'🔑 Clé de la Genèse',bonus:50.00,price:75000000000000,stat:'dps'},
+    // NOUVEAUX ÉQUIPEMENTS AJOUTÉS ICI (x30)
+    {id:'sceptre_celeste',name:'✨ Sceptre Céleste',bonus:100.00,price:300000000000000,stat:'dps'}, 
+    {id:'tiare_immort',name:'👑 Tiare d\'Immortalité',bonus:150.00,price:1200000000000000,stat:'dps'},
+    {id:'griffe_chaos',name:'😈 Griffe du Chaos',bonus:200.00,price:4800000000000000,stat:'dps'},
+    {id:'bottes_temps',name:'🕰️ Bottes du Temps',bonus:250.00,price:19200000000000000,stat:'dps'},
+    {id:'ame_infini',name:'♾️ Âme de l\'Infini',bonus:300.00,price:76800000000000000,stat:'dps'},
+    {id:'armure_cosmique',name:'🌌 Armure Cosmique',bonus:350.00,price:307200000000000000,stat:'dps'},
+    {id:'masque_verite',name:'🎭 Masque de Vérité',bonus:400.00,price:1228800000000000000,stat:'dps'},
+    {id:'lame_stellaire',name:'⭐ Lame Stellaire',bonus:450.00,price:4915200000000000000,stat:'dps'},
+    {id:'collier_etoiles',name:'💫 Collier d\'Étoiles',bonus:500.00,price:19660800000000000000,stat:'dps'},
+    {id:'gantelets_neant',name:'⚫ Gantelets du Néant',bonus:550.00,price:78643200000000000000,stat:'dps'},
+    {id:'cape_ombre',name:'👤 Cape de l\'Ombre',bonus:600.00,price:314572800000000000000,stat:'dps'},
+    {id:'orbe_ascension',name:'🔮 Orbe d\'Ascension',bonus:650.00,price:1258291200000000000000,stat:'dps'},
+    {id:'diademe_royal',name:'⚜️ Diadème Royal',bonus:700.00,price:5033164800000000000000,stat:'dps'},
+    {id:'sceau_divin',name:'🔱 Sceau Divin',bonus:750.00,price:20132659200000000000000,stat:'dps'},
+    {id:'fleche_prim',name:'🏹 Flèche Primordiale',bonus:800.00,price:80530636800000000000000,stat:'dps'},
+    {id:'tapis_volant',name:'🕌 Tapis Volant',bonus:850.00,price:322122547200000000000000,stat:'dps'},
+    {id:'ceinture_force',name:'🥋 Ceinture de Force',bonus:900.00,price:1288490188800000000000000,stat:'dps'},
+    {id:'miroir_destin',name:'🪞 Miroir du Destin',bonus:950.00,price:5153960755200000000000000,stat:'dps'},
+    {id:'livre_sorts',name:'📜 Livre des Sorts',bonus:1000.00,price:20615843020800000000000000,stat:'dps'},
+    {id:'epaulettes_sac',name:'🛡️ Épaulettes Sacrées',bonus:1050.00,price:82463372083200000000000000,stat:'dps'},
+    {id:'bouclier_lum',name:'🔆 Bouclier de Lumière',bonus:1100.00,price:329853488332800000000000000,stat:'dps'},
+    {id:'amulette_temps',name:'⏳ Amulette du Temps',bonus:1150.00,price:1319413953331200000000000000,stat:'dps'},
+    {id:'etoile_filante',name:'🌠 Étoile Filante',bonus:1200.00,price:5277655813324800000000000000,stat:'dps'},
+    {id:'sabre_eclip',name:'🗡️ Sabre Écliptique',bonus:1250.00,price:21110623253299200000000000000,stat:'dps'},
+    {id:'coeur_galaxie',name:'💖 Cœur de Galaxie',bonus:1300.00,price:84442493013196800000000000000,stat:'dps'},
+    {id:'graine_vie',name:'🌿 Graine de Vie',bonus:1350.00,price:337769972052787200000000000000,stat:'dps'},
+    {id:'portail_dim',name:'🌀 Portail Dimensionnel',bonus:1400.00,price:1351079888211148800000000000000,stat:'dps'},
+    {id:'arme_absolue',name:'🔪 Arme Absolue',bonus:1450.00,price:5404319552844595200000000000000,stat:'dps'},
+    {id:'oeil_univers',name:'👁️ Oeil de l\'Univers',bonus:1500.00,price:21617278211378380800000000000000,stat:'dps'},
+    {id:'cle_ultime',name:'🔑 Clé Ultime',bonus:1550.00,price:86469112845513523200000000000000,stat:'dps'},
+];
+
+const ENEMY_TYPES=[
+    {name:'Goblin',sprite:'👹',hpMult:1,goldMult:1},
+    {name:'Orc',sprite:'👺',hpMult:1.5,goldMult:1.3},
+    {name:'Troll',sprite:'🧌',hpMult:2,goldMult:1.5},
+    {name:'Dragon',sprite:'🐉',hpMult:3,goldMult:2},
+    {name:'Démon',sprite:'😈',hpMult:2.5,goldMult:1.8}
+];
+
+const PRESTIGE_UPGRADES = [
+    { id: 'pp_dps_mult', name: 'Force Éternelle', cost: 1, maxLevel: 1000, effect: 'Augmente le DPS de base de 10% (permanent) par niveau.', multiplier: 0.1 },
+    { id: 'pp_gold_rate', name: 'Richesse du Temps', cost: 3, maxLevel: 500, effect: 'Augmente la vitesse de collecte d\'or passive de 20% par niveau.', multiplier: 0.2 },
+    { id: 'pp_lower_cost', name: 'Marchand Céleste', cost: 5, maxLevel: 100, effect: 'Réduit le coût d\'achat des héros et niveaux de 5% par niveau (max 50%).', multiplier: 0.05 },
+];
+const RELICS = [
+    {id:'relic_minor_dps',name:'✨ Relique Mineure DPS',effect:'Augmente le DPS total de 2% (Actif).',bonus:0.02, rarity:'Common'},
+    {id:'relic_gold_bonus',name:'💰 Relique d\'Or',effect:'Augmente le gain d\'or de 5% (Actif).',bonus:0.05, rarity:'Rare'},
+    {id:'relic_crit_chance',name:'💥 Relique de Chance',effect:'Chance de coup critique (+5% DPS total).',bonus:0.05, rarity:'Rare'},
+    {id:'relic_cd_red',name:'⏳ Relique de Temps',effect:'Réduit le CD des compétences de 5% (Actif).',bonus:0.05, rarity:'Epic'},
+    {id:'relic_major_dps',name:'🔥 Relique Majeure DPS',effect:'Augmente le DPS total de 10% (Actif).',bonus:0.10, rarity:'Legendary'},
+    {id:'relic_pp_bonus',name:'💎 Relique de Prestige',effect:'Augmente le gain de Points Prestige de 10% (Actif).',bonus:0.10, rarity:'Legendary'},
+];
+
+// --- VARIABLES D'ÉTAT GLOBALES ---
+
+let state={
+    gold:50000000000000000000000,
+    banked:0,
+    owned:{},
+    equipment:{},
+    // NOUVEAU : Gestion des Reliques
+    relicsOwned:{}, // Stockage de toutes les reliques possédées (pour l'onglet)
+    relicsActive:[null, null, null], // 3 slots pour les reliques actives
+    // FIN NOUVEAU
+    party:[null,null,null,null],
+    enemyLevel:0,
+    prestige:0,
+    prestigePoints:0, 
+    prestigeUpgrades:{}, 
+    bossInterval: 5,
+    skills:{skill1:{cd:0,maxCd:10},skill2:{cd:0,maxCd:15}},
+    currentTab:'shop',
+    buyMode:'1' // RESTAURÉ : Mode d'achat par défaut
+};
+let currentEnemy = {hp: 1, maxHp: 1, reward: 0, name: 'Initialisation', type: 0, isBoss: false};
+
+
+// --- FONCTION DE CORRECTION ET D'INITIALISATION DE L'ÉTAT (CRITIQUE) ---
+function initializeState(){
+    HEROES.forEach(h=>{
+        const defaultState = {count:0,level:0,equipment:[], tierUpsApplied: 0, currentDps: h.baseDps};
+        const ownedData = state.owned[h.id] || {};
+        state.owned[h.id] = {...defaultState, ...ownedData};
+        const heroState = state.owned[h.id];
+
+        if (heroState.currentDps === undefined || heroState.currentDps === null) {
+            heroState.currentDps = h.baseDps;
+        }
+
+        let requiredTiers = 0;
+        h.tierUps.forEach(levelRequired => {
+            if (heroState.level >= levelRequired) {
+                requiredTiers++;
+            }
+        });
+
+        if (requiredTiers > heroState.tierUpsApplied) {
+            const tiersToApply = requiredTiers - heroState.tierUpsApplied;
+            logMsg(`🔧 Correction du Palier de ${h.name}: Applique ${tiersToApply} palier(s) en retard.`);
+            
+            for(let i = 0; i < tiersToApply; i++){
+                heroState.currentDps = Math.floor(heroState.currentDps * (1 + h.tierUpBonus));
+            }
+            
+            heroState.tierUpsApplied = requiredTiers;
+        }
+    });
+
+    EQUIPMENT.forEach(e=>{
+        if(!state.equipment[e.id]){
+            state.equipment[e.id]={count:0};
+        }
+    });
+
+    PRESTIGE_UPGRADES.forEach(u => {
+        if (!state.prestigeUpgrades[u.id]) {
+            state.prestigeUpgrades[u.id] = { level: 0 };
+        }
+    });
+
+    // RESTAURÉ : Assurer que buyMode est défini
+    if (!state.buyMode) {
+        state.buyMode = '1';
+    }
+}
+
+initializeState();
+
+// --- DÉBUT DES FONCTIONS DE SAUVEGARDE ET CHARGEMENT ---
+
+function saveGame(){
+    const saveData = JSON.stringify(state);
+    try {
+        localStorage.setItem('idleHeroesSave', saveData);
+        logMsg('💾 Partie sauvegardée!');
+    } catch(e) {
+        logMsg('⚠️ Erreur de sauvegarde');
+        console.error('Erreur de sauvegarde:', e);
+    }
+}
+
+function loadGame(){
+    try {
+        const loadedData = localStorage.getItem('idleHeroesSave');
+        if(loadedData){
+            const loaded=JSON.parse(loadedData);
+            
+            Object.assign(state,loaded);
+            
+            if(loaded.prestigePoints === undefined) state.prestigePoints = 0;
+            if(loaded.prestigeUpgrades === undefined) state.prestigeUpgrades = {};
+            
+            initializeState(); 
+            
+            if(loaded.enemy && loaded.enemy.level){
+                state.enemyLevel = loaded.enemy.level;
+            }
+            delete state.enemy;
+            
+            logMsg('✅ Partie chargée et paliers corrigés!');
+            return true;
+        }
+    } catch(e) {
+        console.log('Pas de sauvegarde trouvée ou erreur de chargement:', e);
+    }
+    return false;
+}
+
+setInterval(saveGame,5000);
+
+// --- FIN DES FONCTIONS DE SAUVEGARDE ET CHARGEMENT ---
+
+const goldEl=document.getElementById('gold');
+const bankedEl=document.getElementById('banked');
+const dpsEl=document.getElementById('dps');
+const prestigeEl=document.getElementById('prestige');
+const prestigePointsEl=document.getElementById('prestigePoints'); 
+const shopEl=document.getElementById('shop');
+const equipShopEl=document.getElementById('equipShop');
+const prestigeUpgradesEl=document.getElementById('prestigeUpgrades'); 
+const enemyHpEl=document.getElementById('enemyHp');
+const enemyLevelEl=document.getElementById('enemyLevel');
+const enemySpriteEl=document.getElementById('enemySprite');
+const enemyTypeEl=document.getElementById('enemyType');
+const logEl=document.getElementById('log');
+const partyStatsEl=document.getElementById('partyStats');
+const prestigeBonusEl=document.getElementById('prestigeBonus');
+const prestigeBtn=document.getElementById('prestigeBtn');
+
+function fmt(n) {
+    if (n === null || n === undefined) return '0';
+    const num = Number(n);
+    if (num < 1000) return Math.floor(num).toString();
+
+    // Tiers pour l'échelle courte (jusqu'à Nonillion - 1e30)
+    // Au-delà de Nonillion (1e30), on passe au format 1eX
+    const tiers = [
+        { value: 1e30, symbol: "No" }, // Nonillion
+        { value: 1e27, symbol: "Oc" }, // Octillion
+        { value: 1e24, symbol: "Sp" }, // Septillion
+        { value: 1e21, symbol: "Sx" }, // Sextillion
+        { value: 1e18, symbol: "Qn" }, // Quintillion
+        { value: 1e15, symbol: "Qa" }, // Quadrillion
+        { value: 1e12, symbol: "T" },  // Trillion
+        { value: 1e9, symbol: "B" },  // Billion
+        { value: 1e6, symbol: "M" },  // Million
+        { value: 1e3, symbol: "K" }   // Mille
+    ];
+
+    const tier = tiers.find(t => num >= t.value);
+
+    // 1. FORMATAGE STANDARD (K, M, B, ... No)
+    if (tier) {
+        // Format X.X + Symbole (Ex: 54.7M)
+        return (num / tier.value).toFixed(1).replace(/\.0$/, '') + tier.symbol;
+    }
+    
+    // 2. FORMATAGE EXPONENTIEL SIMPLE (1eX) pour les nombres > 1e30
+    
+    let exponent;
+    try {
+        // Méthode robuste pour obtenir l'exposant même pour les nombres > 1e308 (limite JavaScript)
+        // Elle extrait l'exposant de la notation scientifique interne de JS.
+        exponent = parseInt(num.toExponential().split('e')[1], 10);
+    } catch (e) {
+        // En cas d'erreur inattendue (très rare), on utilise le log standard
+        exponent = Math.floor(Math.log10(num));
+    }
+    
+    // Format simple "1eX" comme demandé (Ex: 5.4e30 devient 1e30)
+    // Ceci gère désormais tous les nombres jusqu'à 1e10000 et au-delà.
+    return `1e${exponent}`;
+}
+function logMsg(txt){const d=document.createElement('div'); d.textContent='['+new Date().toLocaleTimeString()+'] '+txt; logEl.prepend(d); if(logEl.childElementCount>200) logEl.removeChild(logEl.lastChild);}
+
+function getPrestigeBonus(){return state.prestige*0.1;}
+
+function getTotalEquipmentBonus(heroId){
+    const hero=state.owned[heroId];
+    let bonus=0;
+    hero.equipment.forEach(equipId=>{
+        const equip=EQUIPMENT.find(e=>e.id===equipId);
+        if(equip) bonus+=equip.bonus;
+    });
+    return bonus;
+}
+
+function getUpgradeBonus(id) {
+    const upgrade = PRESTIGE_UPGRADES.find(u => u.id === id);
+    if (!upgrade) return 0;
+    const level = state.prestigeUpgrades[id] ? state.prestigeUpgrades[id].level : 0;
+    
+    if (id === 'pp_lower_cost') {
+        const cappedLevel = Math.min(level, upgrade.maxLevel);
+        return upgrade.multiplier * cappedLevel;
+    }
+    
+    return upgrade.multiplier * level;
+}
+// --- NOUVEAU : Fonction de calcul des bonus de Relique ---
+function getActiveRelicBonus(stat = 'dps') {
+    let bonus = 0;
+    state.relicsActive.forEach(relicId => {
+        if (relicId) {
+            const relic = RELICS.find(r => r.id === relicId);
+            if (relic) {
+                // Pour l'instant, toutes les reliques affectent le DPS pour la simplicité,
+                // sauf si elles ont un effet spécifique.
+                if (stat === 'dps' && (relic.id === 'relic_minor_dps' || relic.id === 'relic_major_dps' || relic.id === 'relic_crit_chance')) {
+                    bonus += relic.bonus;
+                } else if (stat === 'gold' && relic.id === 'relic_gold_bonus') {
+                    bonus += relic.bonus;
+                } else if (stat === 'cd' && relic.id === 'relic_cd_red') {
+                    bonus += relic.bonus;
+                } else if (stat === 'pp' && relic.id === 'relic_pp_bonus') {
+                    bonus += relic.bonus;
+                }
+            }
+        }
+    });
+    return bonus;
+}
+// --- FIN NOUVEAU ---
+// --- FONCTIONS DE COÛT ET DE QUANTITÉ RESTAURÉES ---
+
+function getHeroCost(heroId, numToBuy = 1) {
+    const h = HEROES.find(x => x.id === heroId);
+    const owned = state.owned[heroId];
+    // Applique la réduction de coût PP
+    const costReduction = getUpgradeBonus('pp_lower_cost'); 
+
+    let totalCost = 0;
+    for (let i = 0; i < numToBuy; i++) {
+        // Le coût d'un nouveau héros augmente de 15% par achat/copie
+        const currentCost = h.price * Math.pow(1.15, owned.count + i); 
+        // Applique la réduction PP
+        totalCost += currentCost * (1 - costReduction);
+    }
+    return Math.ceil(totalCost); // Utilise Math.ceil pour être plus précis avec la réduction
+}
+
+function getHeroUpgradeCost(heroId, numToBuy = 1) {
+    const owned = state.owned[heroId];
+    // Applique la réduction de coût PP
+    const costReduction = getUpgradeBonus('pp_lower_cost'); 
+
+    let totalCost = 0;
+    for (let i = 0; i < numToBuy; i++) {
+        // Le coût du niveau augmente de 50% par niveau
+        const currentCost = 100 * Math.pow(1.5, owned.level + i); 
+        // Applique la réduction PP
+        totalCost += currentCost * (1 - costReduction);
+    }
+    return Math.ceil(totalCost); // Utilise Math.ceil pour être plus précis avec la réduction
+}
+
+function getMaxBuyCount(heroId, type='buy') {
+    const owned = state.owned[heroId];
+    const costReduction = getUpgradeBonus('pp_lower_cost');
+    
+    let costFunction = () => 0;
+    
+    if (type === 'buy') {
+        costFunction = (count) => HEROES.find(x => x.id === heroId).price * Math.pow(1.15, owned.count + count) * (1 - costReduction);
+    } else if (type === 'level') {
+        costFunction = (count) => 100 * Math.pow(1.5, owned.level + count) * (1 - costReduction);
+    }
+    
+    let tempGold = state.gold;
+    let count = 0;
+
+    while (true) {
+        const currentCost = Math.ceil(costFunction(count));
+        // Si le coût est 0 (peut arriver si price=0), ou si l'or est insuffisant, on arrête.
+        if (currentCost === 0 || tempGold < currentCost) { 
+            break;
+        }
+        tempGold -= currentCost;
+        count++;
+        // Limite MAX à 1000 pour éviter les boucles trop longues
+        if (count > 10000) break;
+    }
+    return count;
+}
+// --- FIN FONCTIONS DE COÛT ET DE QUANTITÉ RESTAURÉES ---
+
+
+function getHeroDps(heroId){
+    const owned=state.owned[heroId];
+    
+    const baseDps = owned.currentDps; 
+    
+    const levelBonus=1+owned.level*0.25;
+    const equipBonus=1+getTotalEquipmentBonus(heroId);
+    const prestigeBonus=1+getPrestigeBonus();
+    
+    const ppDpsBonus = 1 + getUpgradeBonus('pp_dps_mult'); 
+    
+    const relicDpsBonus = 1 + getActiveRelicBonus('dps'); // NOUVEAU
+
+    return baseDps*owned.count*levelBonus*equipBonus*prestigeBonus*ppDpsBonus * relicDpsBonus; // MODIFIÉ
+}
+
+function totalDps(){
+    let total=0;
+    state.party.forEach(heroId=>{
+        if(heroId){
+            total+=getHeroDps(heroId);
+        }
+    });
+    return total;
+}
+
+function addToParty(heroId){
+    const emptySlot=state.party.findIndex(slot=>slot===null);
+    if(emptySlot!==-1){
+        state.party[emptySlot]=heroId;
+        return true;
+    }
+    return false;
+}
+
+// --- LOGIQUE DES ONGLET ---
+
+document.getElementById('tabShop').onclick=()=>{
+    state.currentTab='shop';
+    document.getElementById('shopContent').style.display='block';
+    document.getElementById('equipContent').style.display='none';
+    document.getElementById('prestigeUpgradesContent').style.display='none';
+    document.getElementById('tabShop').className='tab active';
+    document.getElementById('tabEquip').className='tab';
+    document.getElementById('tabPrestigeUpgrades').className='tab';
+    renderShop();
+};
+
+document.getElementById('tabEquip').onclick=()=>{
+    state.currentTab='equip';
+    document.getElementById('shopContent').style.display='none';
+    document.getElementById('equipContent').style.display='block';
+    document.getElementById('prestigeUpgradesContent').style.display='none';
+    document.getElementById('tabShop').className='tab';
+    document.getElementById('tabEquip').className='tab active';
+    document.getElementById('tabPrestigeUpgrades').className='tab';
+    renderEquipShop();
+};
+
+document.getElementById('tabPrestigeUpgrades').onclick=()=>{ 
+    state.currentTab='prestigeUpgrades';
+    document.getElementById('shopContent').style.display='none';
+    document.getElementById('equipContent').style.display='none';
+    document.getElementById('prestigeUpgradesContent').style.display='block';
+    document.getElementById('tabShop').className='tab';
+    document.getElementById('tabEquip').className='tab';
+    document.getElementById('tabPrestigeUpgrades').className='tab active';
+    renderPrestigeUpgrades();
+};
+
+// --- FIN LOGIQUE DES ONGLET ---
+
+
+// --- FONCTION RENDERSHOP RESTAURÉE (Gère le mode d'achat) ---
+function renderShop(){
+    shopEl.innerHTML='';
+    const buyMode = state.buyMode;
+    let numToBuy = 1;
+
+    // Détermine la quantité à acheter (valeur par défaut pour x1, x10, etc.)
+    if (buyMode !== 'max') {
+        numToBuy = parseInt(buyMode);
+    }
+
+    HEROES.forEach((h)=>{
+        const owned=state.owned[h.id];
+        let buyAmount;
+        let upgradeAmount;
+        
+        // Gère les montants d'achat et de niveau selon le mode
+        if (buyMode === 'max') {
+             buyAmount = getMaxBuyCount(h.id, 'buy');
+             upgradeAmount = (owned.count > 0) ? getMaxBuyCount(h.id, 'level') : 0;
+        } else {
+             buyAmount = numToBuy;
+             upgradeAmount = numToBuy;
+        }
+        
+        // Si c'est la première fois, on doit au moins acheter x1
+        if (owned.count === 0 && buyAmount < 1) buyAmount = 1;
+        // Si on a le héros et qu'on est en x1/x10/etc, on achète au moins 1 niveau
+        if (owned.count > 0 && buyAmount < 1 && buyMode !== 'max') buyAmount = numToBuy;
+
+
+        // Coûts
+        const buyCost = getHeroCost(h.id, buyAmount);
+        const upgradeCost = (owned.count > 0 && upgradeAmount > 0) ? getHeroUpgradeCost(h.id, upgradeAmount) : Infinity;
+
+        // Statut
+        const canBuy = state.gold >= buyCost && buyAmount > 0;
+        const canUpgrade = state.gold >= upgradeCost && owned.count > 0 && upgradeAmount > 0;
+        
+        // Texte du bouton
+        const buyBtnText = (owned.count === 0 ? 'Acheter' : 'Ajouter');
+        const buyAmountDisplay = (buyMode === 'max' && buyAmount > 0) ? `MAX (${buyAmount})` : `x${buyAmount}`;
+        const buyText = `${buyBtnText} ${buyAmountDisplay} (${fmt(buyCost)} 💰)`;
+
+        const upgradeAmountDisplay = (buyMode === 'max' && upgradeAmount > 0) ? `MAX (${upgradeAmount})` : `x${upgradeAmount}`;
+        const upgradeText = `Niveau ${upgradeAmountDisplay} (${fmt(upgradeCost)} 💰)`;
+
+
+        // --- Construction de la Carte ---
+        const card=document.createElement('div');
+        card.className='hero-card';
+        card.style.flexDirection='column';
+        card.style.alignItems='stretch';
+        
+        const topRow=document.createElement('div');
+        topRow.style.display='grid';
+        topRow.style.gridTemplateColumns='1fr 150px'; // 2 colonnes pour info et bouton achat
+        topRow.style.gap='10px';
+        topRow.style.marginBottom='8px';
+        
+        const infoDiv=document.createElement('div');
+        infoDiv.innerHTML=`<strong>${h.name}</strong><br><small>Base: ${fmt(owned.currentDps)} DPS | Possédé: ${owned.count} | Niv: ${owned.level}</small>`;
+      
+        // --- Bouton Acheter/Ajouter (Copies) ---
+        const buyBtn=document.createElement('button');
+        buyBtn.textContent=buyText;
+        buyBtn.disabled=!canBuy;
+        buyBtn.style.width='100%';
+        // Utilise les fonctions centralisées pour l'achat multi-quantité
+        buyBtn.onclick=()=>buyHero(h.id, buyAmount, buyCost); 
+        
+        topRow.appendChild(infoDiv);
+        topRow.appendChild(buyBtn);
+        
+        const bottomRow=document.createElement('div');
+        
+        // --- Bouton Niveau (Upgrades) ---
+        if(owned.count>0) {
+            bottomRow.style.display='grid';
+            bottomRow.style.gridTemplateColumns='1fr 150px'; // 2 colonnes pour info et bouton niveau
+            bottomRow.style.gap='10px';
+
+            const upgradeInfo=document.createElement('div');
+            upgradeInfo.innerHTML=`<small>Amélioration de Niveau</small>`;
+            
+            const upgradeBtn=document.createElement('button');
+            upgradeBtn.textContent=upgradeText;
+            upgradeBtn.className='upgrade';
+            upgradeBtn.disabled=!canUpgrade;
+            
+            // Utilise les fonctions centralisées pour l'upgrade multi-quantité
+            upgradeBtn.onclick=()=>levelHero(h.id, upgradeAmount, upgradeCost);
+            
+            bottomRow.appendChild(upgradeInfo);
+            bottomRow.appendChild(upgradeBtn);
+        }
+        
+        card.appendChild(topRow);
+        if(owned.count>0) card.appendChild(bottomRow);
+        shopEl.appendChild(card);
+    });
+}
+// --- FIN FONCTION RENDERSHOP RESTAURÉE ---
+
+// --- FONCTION D'ACHAT CENTRALISÉE (COPIES) RESTAURÉE ---
+function buyHero(heroId, numToBuy, cost) {
+    const h = HEROES.find(x => x.id === heroId);
+    if (state.gold >= cost && numToBuy > 0) {
+        state.gold -= cost;
+        const ownedData = state.owned[heroId];
+        const isFirstPurchase = ownedData.count === 0;
+
+        for (let i = 0; i < numToBuy; i++) {
+            ownedData.count++;
+        }
+        
+        if(isFirstPurchase) {
+            if(addToParty(h.id)) {
+                logMsg(`✅ ${h.name} débloqué et ajouté au party! (x${numToBuy})`);
+            } else {
+                 logMsg(`✅ ${h.name} débloqué! (Party plein)`);
+            }
+        } else {
+            logMsg(`✅ ${h.name} ajouté! (+x${numToBuy})`);
+        }
+
+        renderShop();
+        renderParty();
+        renderPartyStats();
+        updateUI();
+    }
+}
+
+// --- FONCTION DE NIVEAU CENTRALISÉE RESTAURÉE ---
+function levelHero(heroId, numToLevel, cost) {
+    const h = HEROES.find(x => x.id === heroId);
+    const ownedData = state.owned[heroId];
+    
+    if (state.gold >= cost && numToLevel > 0 && ownedData.count > 0) {
+        state.gold -= cost;
+
+        for (let i = 0; i < numToLevel; i++) {
+            ownedData.level++;
+            
+            const nextTierIndex = ownedData.tierUpsApplied; 
+            
+            if (nextTierIndex < h.tierUps.length && ownedData.level === h.tierUps[nextTierIndex]) {
+                const tierBonus = h.tierUpBonus;
+                ownedData.currentDps = Math.floor(ownedData.currentDps * (1 + tierBonus)); 
+                ownedData.tierUpsApplied++;
+                logMsg(`🏆 ${h.name} atteint le Palier ${h.tierUps[nextTierIndex]}! DPS de base X ${tierBonus + 1}!`);
+            }
+        }
+
+        logMsg(`⬆️ ${h.name} niveau +${numToLevel}! (Niv. ${ownedData.level})`);
+        
+        updateUI();          
+        renderPartyStats();  
+        renderShop();        
+    }
+}
+// --- FIN FONCTIONS CENTRALISÉES RESTAURÉES ---
+
+
+function renderEquipShop(){
+    equipShopEl.innerHTML='';
+    EQUIPMENT.forEach(e=>{
+        const owned=state.equipment[e.id];
+        const canBuy=state.gold>=e.price;
+        
+        const card=document.createElement('div');
+        card.className='hero-card';
+        
+        const infoDiv=document.createElement('div');
+        infoDiv.innerHTML=`<strong>${e.name}</strong><br><small>+${(e.bonus*100).toFixed(0)}% DPS | Possédé: ${owned.count}</small>`;
+        
+        const priceDiv=document.createElement('div');
+        priceDiv.style.textAlign='right';
+        priceDiv.innerHTML=`<strong class="gold">${fmt(e.price)}</strong>`;
+        
+        const btn=document.createElement('button');
+        btn.textContent='Acheter';
+        btn.disabled=!canBuy;
+        btn.onclick=function(){
+            if(state.gold>=e.price){
+                state.gold-=e.price;
+                state.equipment[e.id].count++;
+                logMsg('✅ '+e.name+' acheté!');
+                renderEquipShop();
+                updateUI();
+                renderPartyStats(); 
+            }
+        };
+        
+        priceDiv.appendChild(btn);
+        card.appendChild(infoDiv);
+        card.appendChild(priceDiv);
+        equipShopEl.appendChild(card);
+    });
+}
+
+function renderPrestigeUpgrades() {
+    prestigeUpgradesEl.innerHTML = '';
+    
+    PRESTIGE_UPGRADES.forEach(u => {
+        const currentLevel = state.prestigeUpgrades[u.id].level;
+        const nextCost = u.cost * (currentLevel + 1); 
+        const canBuy = state.prestigePoints >= nextCost && currentLevel < u.maxLevel;
+        
+        const card = document.createElement('div');
+        card.className = 'hero-card prestige-upgrade';
+        card.style.flexDirection = 'column';
+        card.style.alignItems = 'stretch';
+        
+        const topRow = document.createElement('div');
+        topRow.style.display = 'flex';
+        topRow.style.justifyContent = 'space-between';
+        
+        const infoDiv = document.createElement('div');
+        infoDiv.innerHTML = `<strong>${u.name} (Niv. ${currentLevel}/${u.maxLevel})</strong><br><small>${u.effect}</small>`;
+
+        const btn = document.createElement('button');
+        btn.textContent = currentLevel < u.maxLevel ? `Acheter (${fmt(nextCost)} 💎)` : 'MAX';
+        btn.className = 'prestige';
+        btn.disabled = !canBuy;
+        
+        btn.onclick = () => {
+            if (state.prestigePoints >= nextCost && currentLevel < u.maxLevel) {
+                state.prestigePoints -= nextCost;
+                state.prestigeUpgrades[u.id].level++;
+                logMsg(`⭐ Amélioration ${u.name} achetée!`);
+                renderPrestigeUpgrades();
+                updateUI();
+                renderShop(); // Rafraîchit les coûts/DPS
+                renderPartyStats();
+            }
+        };
+        
+        topRow.appendChild(infoDiv);
+        topRow.appendChild(btn);
+        card.appendChild(topRow);
+        prestigeUpgradesEl.appendChild(card);
+    });
+}
+
+function renderParty(){
+    for(let i=0;i<4;i++){
+        const el=document.getElementById('slot'+i);
+        const id=state.party[i];
+        el.onclick=function(){
+            if(id){
+                state.party[i]=null;
+                logMsg('❌ '+HEROES.find(x=>x.id===id).name+' retiré du party');
+                renderParty();
+                renderPartyStats();
+            } else {
+                showHeroSelector(i);
+            }
+        };
+        
+        if(!id) {
+            el.innerHTML='<div>+ Ajouter</div>';
+            el.className='slot';
+            el.style.cursor='pointer';
+        } else { 
+            const h=HEROES.find(x=>x.id===id);
+            const dps=getHeroDps(id);
+            el.innerHTML=`<div><strong>${h.name}</strong></div><div><small>${fmt(dps)} DPS</small></div><div class="equipment" id="equip${i}"></div><small style="color:#888; margin-top:5px;">Clic pour retirer</small>`;
+            el.className='slot filled';
+            el.style.cursor='pointer';
+            
+            setTimeout(()=>renderHeroEquipment(id,i),0);
+        }
+    }
+}
+
+function renderHeroEquipment(heroId,slotIndex){
+    const equipDiv=document.getElementById('equip'+slotIndex);
+    if(!equipDiv) return;
+    equipDiv.innerHTML='';
+    
+    const hero=state.owned[heroId];
+    for(let i=0;i<3;i++){
+        const slot=document.createElement('div');
+        slot.className='equip-slot';
+        if(hero.equipment[i]){
+            const equip=EQUIPMENT.find(e=>e.id===hero.equipment[i]);
+            slot.textContent=equip.name.split(' ')[0];
+            slot.title=equip.name;
+            slot.onclick=(e)=>{
+                e.stopPropagation();
+                hero.equipment.splice(i,1);
+                state.equipment[equip.id].count++;
+                logMsg('🔧 Équipement retiré');
+                renderParty();
+                renderPartyStats();
+            };
+        } else {
+            slot.textContent='+';
+            slot.onclick=(e)=>{
+                e.stopPropagation();
+                showEquipmentSelector(heroId,i);
+            };
+        }
+        equipDiv.appendChild(slot);
+    }
+}
+
+function showEquipmentSelector(heroId,equipSlot){
+    const availableEquip=EQUIPMENT.filter(e=>state.equipment[e.id].count>0);
+    if(availableEquip.length===0){
+        logMsg('⚠️ Aucun équipement disponible!');
+        return;
+    }
+    
+    const selector=document.createElement('div');
+    selector.style.cssText='position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#0b1220; padding:20px; border-radius:10px; border:2px solid #1e3a5f; z-index:1000; max-width:300px;';
+    selector.innerHTML='<h3 style="margin-top:0;">Équiper</h3>';
+    
+    availableEquip.forEach(e=>{
+        const btn=document.createElement('button');
+        btn.textContent=e.name+' (+'+(e.bonus*100).toFixed(0)+'% DPS)';
+        btn.style.cssText='width:100%; margin:5px 0; padding:10px;';
+        btn.onclick=function(){
+            state.owned[heroId].equipment[equipSlot]=e.id;
+            state.equipment[e.id].count--;
+            logMsg('🔧 '+e.name+' équipé!');
+            document.body.removeChild(selector);
+            document.body.removeChild(overlay);
+            renderParty();
+            renderPartyStats();
+        };
+        selector.appendChild(btn);
+    });
+    
+    const cancelBtn=document.createElement('button');
+    cancelBtn.textContent='Annuler';
+    cancelBtn.style.cssText='width:100%; margin-top:10px; background:#333;';
+    cancelBtn.onclick=function(){
+        document.body.removeChild(selector);
+        document.body.removeChild(overlay);
+    };
+    selector.appendChild(cancelBtn);
+    
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:999;';
+    overlay.onclick=function(){
+        document.body.removeChild(selector);
+        document.body.removeChild(overlay);
+    };
+    
+    document.body.appendChild(overlay);
+    document.body.appendChild(selector);
+}
+
+function renderPartyStats(){
+    const heroes=state.party.filter(h=>h!==null);
+    if(heroes.length===0){
+        partyStatsEl.textContent='Aucun héros dans le party';
+        return;
+    }
+    
+    let html='';
+    heroes.forEach(heroId=>{
+        const h=HEROES.find(x=>x.id===heroId);
+        const dps=getHeroDps(heroId);
+        html+=`${h.name}: ${fmt(dps)} DPS<br>`;
+    });
+    partyStatsEl.innerHTML=html;
+}
+
+function updateUI(){
+    goldEl.textContent=fmt(state.gold);
+    bankedEl.textContent=fmt(state.banked);
+    dpsEl.textContent=fmt(totalDps());
+    prestigeEl.textContent=state.prestige;
+    prestigePointsEl.textContent=fmt(state.prestigePoints);
+}
+
+function spawnEnemy(){
+    state.enemyLevel++;
+    
+    const isBoss = (state.enemyLevel > 0 && state.enemyLevel % state.bossInterval === 0);
+    
+    const enemyTypeIndex = Math.floor(Math.random()*ENEMY_TYPES.length);
+    const enemyData = ENEMY_TYPES[enemyTypeIndex];
+    
+    let hpMultiplier = enemyData.hpMult;
+    let rewardMultiplier = enemyData.goldMult;
+    
+    const baseHp = 100 * Math.pow(1.6, state.enemyLevel - 1);
+    const baseReward = 50 * Math.pow(1.3, state.enemyLevel - 1);
+    
+    if (isBoss) {
+        hpMultiplier = 15; 
+        rewardMultiplier = 10; 
+        logMsg(`🚨 Un BOSS apparaît à la Vague ${state.enemyLevel} !`);
+        enemySpriteEl.className='enemy-sprite boss';
+    } else {
+        enemySpriteEl.className='enemy-sprite';
+    }
+
+    currentEnemy={
+        hp: baseHp * hpMultiplier,
+        maxHp: baseHp * hpMultiplier,
+        reward: baseReward * rewardMultiplier,
+        type: enemyTypeIndex,
+        isBoss: isBoss
+    };
+    
+    enemyTypeEl.textContent=enemyData.name+(isBoss?' BOSS':'');
+    enemySpriteEl.textContent=enemyData.sprite;
+    enemyLevelEl.textContent=state.enemyLevel;
+    enemyHpEl.style.width='100%';
+}
+
+let lastTime=performance.now();
+function gameLoop(currentTime){
+    const delta=currentTime-lastTime;
+    lastTime=currentTime;
+    
+    tick(delta);
+    
+    requestAnimationFrame(gameLoop);
+}
+
+function tick(delta){
+    const dps=totalDps();
+    
+    const goldRateMultiplier = (1 + getUpgradeBonus('pp_gold_rate')) * (1 + getActiveRelicBonus('gold')); // MODIFIÉ
+    state.banked+=dps*(delta/1000) * goldRateMultiplier; 
+    
+    currentEnemy.hp-=dps*(delta/1000); 
+    
+    const cdReduction = getActiveRelicBonus('cd'); // NOUVEAU
+    const tickTime = (delta/1000) * (1 + cdReduction); // NOUVEAU : Augmente la vitesse de réduction du CD
+
+    if(state.skills.skill1.cd>0) state.skills.skill1.cd=Math.max(0,state.skills.skill1.cd-tickTime); // MODIFIÉ
+    if(state.skills.skill2.cd>0) state.skills.skill2.cd=Math.max(0,state.skills.skill2.cd-tickTime); // MODIFIÉ
+    
+    // ... (Reste de la fonction)
+    
+if(currentEnemy.hp<=0){
+        const enemyData=ENEMY_TYPES[currentEnemy.type];
+        const reward = Math.floor(currentEnemy.reward);
+        
+        state.gold+=reward;
+        logMsg(`💀 ${enemyData.name} vaincu! +${fmt(reward)} or${currentEnemy.isBoss?' (BOSS!)':''}`);
+
+        // --- NOUVEAU : Logique de drop de Relique ---
+        if (!currentEnemy.isBoss && Math.random() < 0.05) { // 5% de chance de drop
+            const availableRelics = RELICS.filter(r => state.relicsOwned[r.id].count === 0);
+            if (availableRelics.length > 0) {
+                const droppedRelic = availableRelics[Math.floor(Math.random() * availableRelics.length)];
+                state.relicsOwned[droppedRelic.id].count++;
+                logMsg(`🎉 ARTEFACT TROUVÉ : ${droppedRelic.name}!`);
+                if (state.currentTab === 'relics') renderRelics(); // Rafraîchit le nouvel onglet
+            }
+        }
+        // --- FIN NOUVEAU ---
+
+        spawnEnemy();
+        renderShop(); 
+    }
+    // ... (Reste de la fonction)
+    
+    updateUI();
+    prestigeBonusEl.textContent=(getPrestigeBonus()*100).toFixed(0);
+    enemyLevelEl.textContent=state.enemyLevel;
+    
+    enemyHpEl.style.width=(currentEnemy.hp/currentEnemy.maxHp*100)+'%';
+    
+    document.getElementById('cd1').textContent=Math.ceil(state.skills.skill1.cd);
+    document.getElementById('cd2').textContent=Math.ceil(state.skills.skill2.cd);
+    document.getElementById('skill1').disabled=state.skills.skill1.cd>0;
+    document.getElementById('skill2').disabled=state.skills.skill2.cd>0;
+    
+    prestigeBtn.disabled=state.enemyLevel<50;
+    
+    if(state.enemyLevel >= 50) {
+        // MODIFIÉ : Nouvelle formule pour les points de prestige
+        const ppEarned = 1 + Math.floor((state.enemyLevel - 50) / 10);
+        prestigeBtn.textContent = `Prestige (Gain: ${ppEarned} 💎)`;
+    } else {
+        prestigeBtn.textContent = 'Prestige (Niveau 50+)';
+    }
+}
+
+document.getElementById('skill1').onclick=function(){
+    if(state.skills.skill1.cd===0){
+        const damage=totalDps()*20;
+        currentEnemy.hp-=damage; 
+        state.skills.skill1.cd=state.skills.skill1.maxCd;
+        logMsg('🔥 Boule de feu! '+fmt(damage)+' dégâts!');
+    }
+};
+
+document.getElementById('skill2').onclick=function(){
+    if(state.skills.skill2.cd===0){
+        const damage=totalDps()*50;
+        currentEnemy.hp-=damage; 
+        state.skills.skill2.cd=state.skills.skill2.maxCd;
+        logMsg('⚡ Éclair! '+fmt(damage)+' dégâts!');
+    }
+};
+
+document.getElementById('collectBtn').onclick=function(){
+    if(state.banked>0){
+        state.gold+=Math.floor(state.banked);
+        logMsg('💰 Collecté '+fmt(Math.floor(state.banked))+' or!');
+        state.banked=0;
+        updateUI();
+        renderShop();
+        if(state.currentTab==='equip') renderEquipShop();
+        if(state.currentTab==='prestigeUpgrades') renderPrestigeUpgrades();
+    }
+};
+
+document.getElementById('saveBtn').onclick=saveGame;
+
+prestigeBtn.onclick=function(){
+    if(state.enemyLevel>=50){
+        // MODIFIÉ : Nouvelle formule pour les points de prestige
+        let ppEarned = 1 + Math.floor((state.enemyLevel - 50) / 10); // Utilise 'let' pour pouvoir modifier
+        
+        ppEarned = Math.ceil(ppEarned * (1 + getActiveRelicBonus('pp'))); // NOUVEAU : Bonus de Relique PP
+
+        if(confirm(`Prestige va réinitialiser le jeu mais vous donnera ${ppEarned} Points de Prestige (💎) et un bonus de +10% DPS permanent (⭐). Continuer?`)){
+            
+            state.prestigePoints += ppEarned; 
+            // ... (Reste de la fonction)
+            state.prestige++;
+            state.gold=50;
+            state.banked=0;
+            state.enemyLevel=1;
+            
+            HEROES.forEach(h=>{
+                state.owned[h.id]={count:0,level:0,equipment:[], tierUpsApplied: 0, currentDps: h.baseDps};
+            });
+            
+            EQUIPMENT.forEach(e=>{
+                state.equipment[e.id]={count:0};
+            });
+            
+            state.party=[null,null,null,null];
+            
+            logMsg(`🌟 PRESTIGE RÉUSSI! Points gagnés: ${ppEarned} 💎`);
+            spawnEnemy();
+            renderShop();
+            renderParty();
+            renderPartyStats();
+            updateUI();
+            renderPrestigeUpgrades(); 
+        }
+    }
+};
+
+function showHeroSelector(slotIndex){
+    const availableHeroes=HEROES.filter(h=>state.owned[h.id].count>0 && !state.party.includes(h.id));
+    if(availableHeroes.length===0){
+        logMsg('⚠️ Aucun héros disponible!');
+        return;
+    }
+    
+    const selector=document.createElement('div');
+    selector.style.cssText='position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#0b1220; padding:20px; border-radius:10px; border:2px solid #1e3a5f; z-index:1000; max-width:300px;';
+    selector.innerHTML='<h3 style="margin-top:0;">Ajouter au Party</h3>';
+    
+    availableHeroes.forEach(h=>{
+        const btn=document.createElement('button');
+        btn.textContent=h.name+' (Niv. '+state.owned[h.id].level+')';
+        btn.style.cssText='width:100%; margin:5px 0; padding:10px;';
+        btn.onclick=function(){
+            state.party[slotIndex]=h.id;
+            logMsg('✅ '+h.name+' ajouté au party!');
+            document.body.removeChild(selector);
+            document.body.removeChild(overlay);
+            renderParty();
+            renderPartyStats();
+        };
+        selector.appendChild(btn);
+    });
+    
+    const cancelBtn=document.createElement('button');
+    cancelBtn.textContent='Annuler';
+    cancelBtn.style.cssText='width:100%; margin-top:10px; background:#333;';
+    cancelBtn.onclick=function(){
+        document.body.removeChild(selector);
+        document.body.removeChild(overlay);
+    };
+    selector.appendChild(cancelBtn);
+    
+    const overlay=document.createElement('div');
+    overlay.style.cssText='position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:999;';
+    overlay.onclick=function(){
+        document.body.removeChild(selector);
+        document.body.removeChild(overlay);
+    };
+    
+    document.body.appendChild(overlay);
+    document.body.appendChild(selector);
+}
+
+// --- LOGIQUE DES BOUTONS DE MODE D'ACHAT RESTAURÉE ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Écouteurs pour les boutons de mode d'achat
+    document.querySelectorAll('.buyModeBtn').forEach(btn => {
+        const mode = btn.getAttribute('data-mode');
+        // Initialiser l'état actif au chargement
+        if (mode === state.buyMode) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+        
+        btn.onclick = () => {
+            state.buyMode = mode;
+            document.querySelectorAll('.buyModeBtn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (state.currentTab === 'shop') renderShop(); // Rafraîchit uniquement si nous sommes dans la boutique
+        };
+    });
+    
+    // Si la page est rechargée après chargement de la sauvegarde, assurez-vous que le bouton actif est le bon.
+    const activeBtn = document.querySelector(`.buyModeBtn[data-mode="${state.buyMode}"]`);
+    document.querySelectorAll('.buyModeBtn').forEach(b => b.classList.remove('active'));
+    if (activeBtn) activeBtn.classList.add('active');
+});
+// --- FIN LOGIQUE DES BOUTONS DE MODE D'ACHAT RESTAURÉE ---
+
+
+// --- Démarrage du jeu ---
+if(!loadGame()){
+    spawnEnemy(); 
+}
+
+lastTime=performance.now(); 
+requestAnimationFrame(gameLoop);
+renderShop();
+renderParty();
+renderPartyStats();
+updateUI();
+</script>
+</body>
+</html>

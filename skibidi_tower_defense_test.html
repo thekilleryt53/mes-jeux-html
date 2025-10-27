@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Castle Defender: 360° Defense - Version V4.3 (Recadrage UI et Correction Monstre)</title>
+    <style>
+        /* ========================================================================= */
+        /* CSS STYLES (Version V4.3: Refonte du Cadre Principal) */
+        /* ========================================================================= */
+
+        :root {
+            --map-width: 900px;
+            --map-height: 700px;
+            --resource-color: #a37c00; /* Or vieilli/Bronze */
+            --health-color-full: #1e8449; /* Vert forêt */
+            --health-color-low: #c0392b; /* Rouge sang/brique */
+            --map-bg: linear-gradient(135deg, #748c5e 0%, #4a5c48 100%); /* Champ de bataille terreux/vert sombre */
+            --archer-color: #4b2c20; /* Bois sombre */
+            --magic-color: #3b3b6f; /* Pierre de saphir */
+            --frost-color: #9cdbd8; /* Glace pâle */
+            --select-color: #f7dc6f; /* Jaune parchemin */
+            --ui-bg-color: #362e2c; /* Brun foncé/Ardoise */
+            --ui-text-color: #f0e68c; /* Or pâle/Crème */
+            --accent-btn-color: #5d4a36; /* Brun cuir/bois clair */
+            --upgrade-color: #d35400; /* Cuivre rouillé */
+            --sell-color: #7b241c; /* Rouge foncé (Fer rouillé) */
+        }
+
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: radial-gradient(#1c1b1a 10%, #0d0c0c 100%);
+            color: var(--ui-text-color);
+            user-select: none;
+            overflow: hidden;
+        }
+
+        /* Nouveau Conteneur Principal pour tout centrer */
+        #main-app-container {
+            display: flex; /* Utilisation de Flexbox pour aligner carte et panneau */
+            gap: 15px; /* Espacement entre la carte et le panneau */
+            align-items: flex-start;
+            padding: 20px; /* Un peu d'espace autour du jeu */
+            background: #1c1b1a; /* Fond pour encadrer le tout */
+            border: 15px solid #2a221a; /* Bordure d'encadrement plus marquée */
+            border-radius: 12px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.9), inset 0 0 20px rgba(0, 0, 0, 0.5);
+            max-width: fit-content; /* Permet au conteneur de s'adapter à son contenu */
+        }
+
+        #game-container {
+            width: var(--map-width);
+            height: var(--map-height);
+            position: relative;
+            background: var(--map-bg);
+            border: 8px solid #5a4b3d; /* Bordure ajustée */
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.8), inset 0 0 10px rgba(0, 0, 0, 0.5); 
+            overflow: hidden;
+            border-radius: 4px;
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"><text x="0" y="20" font-size="20" fill="white">⚔️</text></svg>'), auto;
+        }
+        
+        /* ------------------------------------------------------------------------- */
+        /* UI Panel - Recadrage et Style Médiéval/Réaliste (Ajusté) */
+        /* ------------------------------------------------------------------------- */
+
+        #ui-panel {
+            width: 320px;
+            height: var(--map-height); /* Nouvelle hauteur fixée à celle de la carte */
+            padding: 25px 20px;
+            background: var(--ui-bg-color);
+            border: 8px solid #5a4b3d; /* Mêmes bordures que la carte */
+            border-radius: 4px; /* Correspond à la carte */
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.9), inset 0 0 10px rgba(0, 0, 0, 0.7);
+            z-index: 100;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        #ui-panel h3 { 
+            margin: 0 0 25px; 
+            font-size: 2em; 
+            color: var(--resource-color); 
+            text-align: center;
+            text-shadow: 1px 1px 2px #000;
+            font-weight: bold;
+            border-bottom: 2px solid var(--resource-color);
+            padding-bottom: 10px;
+        }
+        
+        /* Conteneur des stats */
+        #stats {
+            padding: 15px;
+            background-color: #2c2523;
+            border: 3px outset #5d4a36;
+            border-radius: 4px;
+            margin-bottom: 25px;
+            box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5);
+        }
+        
+        #stats p { 
+            margin: 10px 0; 
+            font-size: 1.1em; 
+            display: flex; 
+            justify-content: space-between;
+            border-bottom: 1px dashed rgba(240, 230, 140, 0.3);
+            padding-bottom: 5px;
+        }
+        #stats p:last-child { border-bottom: none; padding-bottom: 0; }
+        
+        .stat-value { 
+            color: white; 
+            font-weight: bold; 
+            font-size: 1.1em;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5); 
+        }
+        #gold-display { color: var(--resource-color); text-shadow: 0 0 5px var(--resource-color); }
+        #castle-hp-display { color: var(--health-color-full); }
+        
+        /* Boutons de Construction/Vague (Style Cuir/Métal) */
+        .ui-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 3px outset var(--accent-btn-color);
+            border-radius: 4px;
+            background-color: var(--accent-btn-color);
+            color: var(--ui-text-color);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 0 5px 0 0 #2a221a;
+        }
+        .ui-btn:hover:not(:disabled) { 
+            transform: translateY(1px);
+            box-shadow: 0 4px 0 0 #2a221a; 
+            background-color: #7b624a;
+        }
+        .ui-btn:active:not(:disabled) {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 0 #2a221a;
+        }
+        .ui-btn:disabled { 
+            background-color: #403830; 
+            border-color: #504840;
+            color: #888; 
+            cursor: not-allowed; 
+            box-shadow: 0 5px 0 0 #201a15;
+        }
+        .wave-btn {
+            background-color: #4a4a4a;
+            border-color: #6d6d6d;
+            color: white;
+            margin-top: 15px;
+            font-size: 1.2em;
+            box-shadow: 0 5px 0 0 #222222;
+        }
+        .wave-btn:hover:not(:disabled) {
+             background-color: #5c5c5c;
+        }
+
+        /* Informations sur la Tour Sélectionnée (Style Parchemin) */
+        #selected-tower-info {
+            border: 3px solid var(--resource-color);
+            border-radius: 4px;
+            background: #f7f3e8; 
+            color: #333;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.5), inset 0 0 10px rgba(0, 0, 0, 0.2);
+            margin-top: 25px;
+            padding: 15px;
+            text-align: center;
+        }
+        #selected-tower-info h4 {
+            color: var(--resource-color);
+            border-bottom: 1px solid #aaa;
+            padding-bottom: 5px;
+            margin: 0 0 10px;
+            font-size: 1.2em;
+        }
+        #selected-tower-info p {
+             margin: 6px 0;
+             color: #555;
+        }
+        #tower-name {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #111;
+        }
+        #tower-stats {
+            font-size: 1em;
+            color: #444;
+        }
+        
+        /* Groupe Améliorer/Vendre */
+        #upgrade-sell-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        #upgrade-sell-group button {
+            flex-grow: 1;
+            padding: 10px 5px;
+            font-size: 0.9em;
+            color: white;
+            box-shadow: 0 4px 0 0 #2a221a;
+        }
+        #upgrade-sell-group button:active:not(:disabled) {
+            transform: translateY(3px); 
+            box-shadow: 0 1px 0 0 #2a221a;
+        }
+
+        #upgrade-btn {
+            background-color: var(--upgrade-color);
+            border-color: #f1c40f; 
+        }
+        #upgrade-btn:hover:not(:disabled) {
+            background-color: #e67e22; 
+        }
+
+        #sell-btn {
+            background-color: var(--sell-color);
+            border-color: #c0392b; 
+        }
+        #sell-btn:hover:not(:disabled) {
+            background-color: #922b21;
+        }
+        
+        /* Panneau d'aide */
+        #tower-info {
+             border: 2px solid #5d4a36;
+             background: rgba(93, 74, 54, 0.2);
+             box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+             color: var(--ui-text-color);
+        }
+        #current-mode {
+            color: var(--upgrade-color);
+            font-weight: bold;
+        }
+
+
+        /* ------------------------------------------------------------------------- */
+        /* Castle & Towers (Inclus la prévisualisation) */
+        /* ------------------------------------------------------------------------- */
+        
+        #castle {
+            width: 280px;
+            height: 180px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #4a4a4a;
+            border: 8px ridge #797979;
+            border-radius: 10px;
+            z-index: 50;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.9), inset 0 0 20px #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        #castle::before {
+            content: '🛡️';
+            font-size: 7em;
+            color: #f0e68c;
+            text-shadow: 3px 3px 5px #000;
+        }
+        
+        .tower {
+            position: absolute;
+            width: 65px;
+            height: 65px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.2);
+            transition: box-shadow 0.2s, transform 0.2s;
+            cursor: pointer;
+            z-index: 30;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* Styles pour la PRÉVISUALISATION d'icône (Nouveau ou mis à jour) */
+        #placement-icon-visual {
+            /* Positionnement de base pour l'élément qui suit la souris */
+            pointer-events: none; /* TRÈS important pour ne pas bloquer les clics */
+            z-index: 35;
+            opacity: 0.7; /* Rendre légèrement transparent */
+            transition: none; /* Supprimer les transitions pour un suivi instantané */
+            cursor: none; /* Cache le curseur standard */
+            /* La couleur et le contenu seront donnés par JS via les classes .archer, .magic, .frost */
+        }
+        
+        /* Couleurs texturées pour les Tours */
+        .tower.archer { 
+            background: linear-gradient(to bottom, #8b4513, #6b3e23);
+            border: 4px solid #a0522d; 
+        }
+        .tower.magic { 
+            background: linear-gradient(to bottom, #00008b, #191970);
+            border: 4px solid #363699; 
+        }
+        .tower.frost { 
+            background: linear-gradient(to bottom, #00ced1, #009999);
+            border: 4px solid #b0e0e6; 
+        }
+
+        .tower::after { 
+            content: '';
+            position: absolute;
+            font-size: 2.5em; 
+            text-shadow: 1px 1px 3px #000;
+            color: white;
+            transition: transform 0.2s;
+        }
+        .tower.archer::after { content: '🎯'; }
+        .tower.magic::after { content: '🔮'; }
+        .tower.frost::after { content: '💎'; }
+        
+        .tower.level-2 { border-width: 6px; }
+        .tower.level-2::after { transform: scale(1.3); } 
+        
+        .tower.selected { 
+            border: 5px solid var(--select-color); 
+            box-shadow: 0 0 30px var(--select-color), inset 0 0 10px rgba(255, 255, 255, 0.5); 
+            z-index: 35; 
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .tower.firing {
+            box-shadow: 0 0 30px 10px #ff8c00; 
+            transform: translate(-50%, -50%) scale(1.15);
+            transition: box-shadow 0.1s, transform 0.1s;
+        }
+
+        #selected-range-visual, #placement-range-preview {
+            position: absolute;
+            border: 3px solid var(--select-color);
+            border-style: dashed;
+            border-radius: 50%;
+            background: rgba(247, 220, 111, 0.1); 
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            box-shadow: 0 0 20px var(--select-color);
+            animation: pulse-range 2s infinite alternate;
+        }
+
+        #placement-range-preview.invalid {
+             border-color: var(--sell-color);
+             background: rgba(123, 36, 28, 0.15);
+             box-shadow: 0 0 20px var(--sell-color);
+        }
+        
+        @keyframes pulse-range {
+            from { opacity: 0.6; }
+            to { opacity: 0.9; }
+        }
+
+        /* ------------------------------------------------------------------------- */
+        /* Units/Enemies/Projectiles */
+        /* ------------------------------------------------------------------------- */
+        
+        .unit {
+            position: absolute;
+            z-index: 20;
+            transition: transform 0.05s linear;
+        }
+
+        .enemy {
+            background-color: #5d4a36;
+            border: 3px solid #7b241c;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8em;
+            color: var(--ui-text-color);
+            text-shadow: 1px 1px 2px #000;
+            box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.8);
+        }
+        /* CORRECTION: Cette règle CSS affiche le contenu de l'attribut data-visual (l'emoji) */
+        .enemy[data-visual]::before {
+            content: attr(data-visual);
+        }
+        
+        .enemy.dragon {
+            background-color: #333333;
+            border-color: #a37c00;
+            font-size: 3em;
+            box-shadow: 0 0 20px 10px rgba(163, 124, 0, 0.7); 
+        }
+        
+        .enemy.slowed { 
+            border: 5px solid var(--frost-color);
+            box-shadow: 0 0 10px var(--frost-color), 0 0 25px 8px rgba(156, 219, 216, 0.7);
+            opacity: 0.8;
+        }
+        
+        /* Projectiles - Visuels plus concrets */
+        .projectile {
+            position: absolute;
+            transition: none;
+            z-index: 40;
+            transform: translate(-50%, -50%); 
+        }
+        .projectile.magic { 
+            width: 15px; height: 15px; border-radius: 50%;
+            background-color: #9932cc; /* Améthyste */
+            box-shadow: 0 0 10px 4px #9932cc;
+        }
+        .projectile.archer { 
+            width: 25px; 
+            height: 3px;
+            background: #4b2c20; /* Flèche en bois */
+            border-radius: 0;
+            box-shadow: 1px 1px 3px #000;
+        }
+        .projectile.frost { 
+            width: 12px; height: 12px; border-radius: 50%;
+            background-color: #fff;
+            border: 2px solid #6a5acd;
+            box-shadow: 0 0 15px #6a5acd;
+        }
+
+        /* Health Bar */
+        .health-bar {
+            position: absolute;
+            width: 100%;
+            top: -12px; 
+            left: 0;
+            height: 6px; 
+            background-color: rgba(0, 0, 0, 0.7);
+            border-radius: 0;
+            overflow: hidden;
+            border: 1px solid #444;
+            transform: translate(0, 0); 
+        }
+        #castle-health-bar {
+            width: 200px;
+            top: 440px; 
+            left: 350px; 
+            height: 12px; 
+            border-radius: 4px;
+        }
+
+        .health-fill {
+            height: 100%;
+            background-color: var(--health-color-full);
+            transition: width 0.1s;
+        }
+        
+        /* Game Over / Win Overlay (Style Bannière/Parchemin) */
+        #game-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            display: none; 
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-radius: 10px;
+        }
+        #overlay-title { 
+            font-size: 5em; 
+            color: var(--resource-color); 
+            margin-bottom: 20px; 
+            text-shadow: 0 0 10px var(--resource-color), 2px 2px 5px #000;
+        }
+        #overlay-message { 
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 2em; 
+            color: #f7f3e8; 
+            background: rgba(20, 15, 10, 0.7);
+            padding: 10px 20px;
+            border: 3px double #a37c00;
+            margin-bottom: 40px; 
+        }
+        #overlay-restart-btn { 
+            padding: 20px 40px; 
+            font-size: 1.5em; 
+            background-color: var(--upgrade-color); 
+            border: 3px outset #f1c40f; 
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 5px 0 0 #2a221a;
+            transition: all 0.2s;
+        }
+        #overlay-restart-btn:hover { 
+            background-color: #e67e22;
+            transform: translateY(1px);
+            box-shadow: 0 4px 0 0 #2a221a;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="main-app-container">
+        <div id="game-container">
+            
+            <div id="placement-range-preview" style="display: none;"></div>
+            <div id="placement-icon-visual" class="tower" style="display: none; position: absolute;"></div> 
+            <div id="selected-range-visual" style="display: none;"></div>
+
+            <div id="castle">
+            </div>
+            <div id="castle-health-bar" class="health-bar" style="position: absolute; width: 150px; top: 435px; left: 375px; z-index: 51;">
+                <div id="castle-health-fill" class="health-fill" style="width: 100%;"></div>
+            </div>
+
+
+            <div id="towers-container"></div>
+            <div id="enemies-container"></div>
+            <div id="projectiles-container"></div>
+            
+        </div>
+        
+        <div id="ui-panel">
+            <h3>🛡️ Commandement du Château</h3>
+            <div id="stats">
+                <p>💰 Or: <span id="gold-display" class="stat-value">0</span></p>
+                <p>🌊 Vague: <span id="wave-display" class="stat-value">0</span></p>
+                <p>🏰 Château HP: <span id="castle-hp-display" class="stat-value">0</span></p>
+                <p>💀 Ennemis Restants: <span id="enemies-remaining" class="stat-value">0</span></p>
+            </div>
+
+            <div class="button-group">
+                <button id="select-tower-1-btn" class="ui-btn">Tir d'Arc (150 Or)</button>
+                <button id="select-tower-2-btn" class="ui-btn">Tour Magique (300 Or)</button>
+                <button id="select-tower-3-btn" class="ui-btn">Tour de Givre (250 Or)</button>
+                <button id="next-wave-btn" class="ui-btn wave-btn">Lancer Vague Suivante</button>
+            </div>
+            
+            <div id="selected-tower-info">
+                <h4>Tour Sélectionnée</h4>
+                <p id="tower-name">Aucune.</p>
+                <p id="tower-stats">Stats : --</p>
+                <p id="tower-unique-stat" style="font-size:0.85em; color: #aaa;">Unique : --</p>
+                
+                <div id="upgrade-sell-group">
+                    <button id="upgrade-btn" disabled>Améliorer (0 Or)</button>
+                    <button id="sell-btn" disabled>Vendre (0 Or)</button>
+                </div>
+            </div>
+            
+            <div id="tower-info" style="margin-top: 15px; padding: 10px; background: rgba(93, 74, 54, 0.2); border-radius: 5px; font-size: 0.9em;">
+                <h4 style="color: #00ffff;">Mode Construction:</h4>
+                <p id="current-mode">Cliquez sur un bouton pour sélectionner.</p>
+                <p>Taille Tour: 60x60px. Collision Tour/Tour: 60px de centre à centre.</p>
+                <p>Distance min. du Château: 100px.</p>
+            </div>
+        </div>
+
+        <div id="placement-info" style="display: none;"></div>
+        
+        <div id="game-overlay">
+            <h1 id="overlay-title"></h1>
+            <p id="overlay-message"></p>
+            <button id="overlay-restart-btn">Rejouer</button>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        /* JAVASCRIPT LOGIC (Version V4.3 - Mise à jour correction monstre) */
+        // =========================================================================
+
+        // --- Configuration Globale (Étendue) ---
+        const config = {
+            GAME_TICK: 50,
+            START_GOLD: 1000,
+            CASTLE_HP: 5000,
+            CASTLE_CENTER: { x: 450, y: 350 },
+            CASTLE_RECT: { x: 325, y: 275, w: 250, h: 150 },
+            TOWER_SIZE: 60,
+            TOWER_COLLISION_RADIUS: 30,
+            TOWER_PLACEMENT_PADDING: 100,
+            ENEMY_HITBOX_RADIUS: 12,
+            DRAGON_HITBOX_RADIUS: 25,
+            TOWER_TYPES: {
+                ARCHER: { 
+                    name: "Tir d'Arc", type: 'archer', unique: "Dégâts physiques rapides.",
+                    lvl1: { cost: 150, damage: 20, range: 150, rate: 1000, sellFactor: 0.7 },
+                    lvl2: { cost: 150, damage: 45, range: 180, rate: 800, sellFactor: 0.7 }
+                },
+                MAGIC: { 
+                    name: "Tour Magique", type: 'magic', unique: "Grand impact, cadence lente.",
+                    lvl1: { cost: 300, damage: 75, range: 200, rate: 2500, sellFactor: 0.7 },
+                    lvl2: { cost: 300, damage: 150, range: 250, rate: 2000, sellFactor: 0.7 }
+                },
+                FROST: {
+                    name: "Tour de Givre", type: 'frost', unique: "Ralentit les ennemis dans sa portée.",
+                    lvl1: { cost: 250, damage: 0, range: 180, rate: 1000, slow: 0.5, slowDuration: 2500, sellFactor: 0.7 },
+                    lvl2: { cost: 250, damage: 0, range: 220, rate: 800, slow: 0.3, slowDuration: 3000, sellFactor: 0.7 }
+                }
+            },
+            SPAWN_POINTS: [
+                { x: 20, y: 20 }, { x: 880, y: 20 }, 
+                { x: 20, y: 680 }, { x: 880, y: 680 }
+            ],
+            WAVE_DATA: [
+                [{ type: 'grunt', count: 10, hp: 100, speed: 1.5, reward: 10 }],
+                [{ type: 'grunt', count: 18, hp: 130, speed: 1.8, reward: 12 }],
+                [{ type: 'grunt', count: 25, hp: 160, speed: 2.0, reward: 15 }, 
+                 { type: 'dragon', count: 1, hp: 800, speed: 1.0, reward: 75, isBoss: true }],
+                [{ type: 'grunt', count: 30, hp: 180, speed: 2.2, reward: 18 },
+                 { type: 'dragon', count: 3, hp: 900, speed: 1.2, reward: 80 }],
+                [{ type: 'grunt', count: 40, hp: 200, speed: 2.5, reward: 20 },
+                 { type: 'dragon', count: 5, hp: 1000, speed: 1.5, reward: 100, isBoss: true }],
+                 [{ type: 'grunt', count: 50, hp: 250, speed: 2.8, reward: 25 },
+                  { type: 'dragon', count: 5, hp: 1200, speed: 1.8, reward: 120 }],
+                 [{ type: 'grunt', count: 60, hp: 300, speed: 3.0, reward: 30 },
+                  { type: 'dragon', count: 8, hp: 1500, speed: 2.0, reward: 150 }]
+            ],
+            ENEMY_SPAWN_INTERVAL: 1000 
+        };
+        
+        // --- Variables Globales d'État ---
+        let gold = config.START_GOLD;
+        let wave = 0;
+        let isWaveActive = false;
+        let gameLoopInterval = null;
+        let towers = [];
+        let enemies = [];
+        let projectiles = [];
+        let towerIdCounter = 0;
+        let enemyIdCounter = 0;
+        let currentBuildType = null;
+        let selectedTower = null;
+        let lastWaveGoldBonus = 0;
+        
+        // --- Références DOM ---
+        const dom = {
+            gold: document.getElementById('gold-display'),
+            wave: document.getElementById('wave-display'),
+            castleHp: document.getElementById('castle-hp-display'),
+            enemiesRemaining: document.getElementById('enemies-remaining'),
+            castleHealthFill: document.getElementById('castle-health-fill'),
+            selectTower1Btn: document.getElementById('select-tower-1-btn'),
+            selectTower2Btn: document.getElementById('select-tower-2-btn'),
+            selectTower3Btn: document.getElementById('select-tower-3-btn'),
+            nextWaveBtn: document.getElementById('next-wave-btn'),
+            towersContainer: document.getElementById('towers-container'),
+            enemiesContainer: document.getElementById('enemies-container'),
+            projectilesContainer: document.getElementById('projectiles-container'),
+            overlay: document.getElementById('game-overlay'),
+            overlayTitle: document.getElementById('overlay-title'),
+            overlayMessage: document.getElementById('overlay-message'),
+            overlayRestartBtn: document.getElementById('overlay-restart-btn'),
+            gameContainer: document.getElementById('game-container'),
+            currentMode: document.getElementById('current-mode'),
+            placementInfo: document.getElementById('placement-info'),
+            
+            placementRangePreview: document.getElementById('placement-range-preview'),
+            placementIconVisual: document.getElementById('placement-icon-visual'),
+            selectedRangeVisual: document.getElementById('selected-range-visual'),
+
+            selectedTowerInfo: document.getElementById('selected-tower-info'),
+            towerName: document.getElementById('tower-name'),
+            towerStats: document.getElementById('tower-stats'),
+            towerUniqueStat: document.getElementById('tower-unique-stat'),
+            upgradeBtn: document.getElementById('upgrade-btn'),
+            sellBtn: document.getElementById('sell-btn')
+        };
+        
+        // --- Classes de Jeu ---
+
+        class Castle {
+            constructor(maxHp) {
+                this.maxHp = maxHp;
+                this.hp = maxHp;
+                this.pos = config.CASTLE_CENTER;
+            }
+            takeDamage(amount) {
+                if (this.hp <= 0) return;
+                this.hp -= amount;
+                if (this.hp < 0) this.hp = 0;
+                this.updateDisplay();
+                if (this.hp === 0) gameOver(false);
+            }
+
+            updateDisplay() {
+                const percentage = (this.hp / this.maxHp) * 100;
+                dom.castleHealthFill.style.width = percentage + '%';
+                dom.castleHp.textContent = this.hp;
+                dom.castleHealthFill.style.backgroundColor = percentage < 25 ? 'var(--health-color-low)' : 'var(--health-color-full)';
+            }
+        }
+        
+        class Unit {
+            constructor(id, type, x, y, hp, maxHp, size, offset) {
+                this.id = id;
+                this.type = type;
+                this.hp = hp;
+                this.maxHp = maxHp;
+                this.pos = { x, y };
+                this.size = size;
+                this.offset = offset;
+                this.element = this.createElement();
+            }
+
+            createElement() {
+                const element = document.createElement('div');
+                element.className = 'unit ' + this.type;
+                element.id = this.type + '-' + this.id;
+                
+                // Positionnement centré
+                element.style.left = (this.pos.x - this.offset) + 'px';
+                element.style.top = (this.pos.y - this.offset) + 'px';
+                element.style.width = this.size + 'px';
+                element.style.height = this.size + 'px';
+                
+                const hb = document.createElement('div');
+                hb.className = 'health-bar';
+                const hf = document.createElement('div');
+                hf.className = 'health-fill';
+                hb.appendChild(hf);
+                element.appendChild(hb);
+                this.healthFill = hf;
+
+                return element;
+            }
+
+            updateDisplay() {
+                const percentage = (this.hp / this.maxHp) * 100;
+                this.healthFill.style.width = percentage + '%';
+                if (percentage < 20) this.healthFill.style.backgroundColor = 'red';
+            }
+
+            takeDamage(amount) {
+                this.hp -= amount;
+                if (this.hp < 0) this.hp = 0;
+                this.updateDisplay();
+                return this.hp === 0;
+            }
+
+            remove() {
+                this.element.remove();
+            }
+        }
+
+        class Tower extends Unit {
+            constructor(id, x, y, type) {
+                const typeData = config.TOWER_TYPES[type];
+                super(id, 'tower ' + typeData.type, x, y, 100, 100, config.TOWER_SIZE, config.TOWER_SIZE / 2);
+                this.towerType = type;
+                this.level = 1;
+                this.isAttacker = true;
+                this.updateStats();
+                this.lastAttack = 0;
+                this.target = null;
+                this.element.className = 'tower ' + type.toLowerCase(); 
+                this.element.onclick = (e) => { 
+                    e.stopPropagation();
+                    selectTower(this); 
+                };
+            }
+            
+            updateStats() {
+                const stats = config.TOWER_TYPES[this.towerType]['lvl' + this.level];
+                this.damage = stats.damage;
+                this.range = stats.range;
+                this.attackRate = stats.rate;
+                this.cost = stats.cost;
+                const costLvl1 = config.TOWER_TYPES[this.towerType].lvl1.cost;
+                const costLvl2 = this.level > 1 ? config.TOWER_TYPES[this.towerType].lvl2.cost : 0;
+                this.sellValue = Math.floor((costLvl1 + costLvl2) * config.TOWER_TYPES[this.towerType].lvl1.sellFactor);
+                
+                this.element.setAttribute('data-range', this.range);
+                this.element.classList.toggle('level-2', this.level === 2);
+                
+                if (selectedTower && selectedTower.id === this.id) updateSelectedTowerInfo();
+            }
+            
+            upgrade() {
+                if (this.level === 2) {
+                    showMessage("La tour est déjà au niveau maximum !", 2000);
+                    return false;
+                }
+                const upgradeCost = config.TOWER_TYPES[this.towerType].lvl2.cost;
+                if (gold < upgradeCost) {
+                    showMessage("Pas assez d'or pour améliorer ! Coût: " + upgradeCost, 2000);
+                    return false;
+                }
+                
+                addGold(-upgradeCost);
+                this.level = 2;
+                this.updateStats();
+                showMessage(config.TOWER_TYPES[this.towerType].name + " améliorée au Niveau 2!", 2000);
+                return true;
+            }
+
+            findTarget(enemies) {
+                let closest = null;
+                let minDist = Infinity;
+                
+                enemies.forEach(enemy => {
+                    const dist = distance(this.pos, enemy.pos);
+                    if (dist <= this.range && dist < minDist) {
+                        minDist = dist;
+                        closest = enemy;
+                    }
+                });
+                this.target = closest;
+            }
+
+            attack() {
+                if (this.target && this.target.hp > 0 && distance(this.pos, this.target.pos) <= this.range && Date.now() - this.lastAttack >= this.attackRate) {
+                    this.lastAttack = Date.now();
+                    const typeData = config.TOWER_TYPES[this.towerType];
+                    const projectile = new Projectile(this.pos.x, this.pos.y, this.target, this.damage, typeData.type);
+                    projectiles.push(projectile);
+                    dom.projectilesContainer.appendChild(projectile.element);
+                }
+            }
+        }
+        
+        class FrostTower extends Tower {
+            constructor(id, x, y) {
+                super(id, x, y, 'FROST');
+                this.isAttacker = false;
+            }
+
+            updateStats() {
+                super.updateStats();
+                const stats = config.TOWER_TYPES.FROST['lvl' + this.level];
+                this.slowFactor = stats.slow;
+                this.slowDuration = stats.slowDuration;
+            }
+            
+            attack() {
+                if (Date.now() - this.lastAttack >= this.attackRate) {
+                    this.lastAttack = Date.now();
+                    
+                    enemies.forEach(enemy => {
+                        const dist = distance(this.pos, enemy.pos);
+                        if (dist <= this.range) {
+                            enemy.applySlow(this.slowFactor, this.slowDuration);
+                        }
+                    });
+                    
+                    const effect = document.createElement('div');
+                    effect.style.cssText = `
+                        position: absolute;
+                        width: ${this.range * 2}px;
+                        height: ${this.range * 2}px;
+                        left: ${this.pos.x - this.range}px;
+                        top: ${this.pos.y - this.range}px;
+                        border-radius: 50%;
+                        background: rgba(0, 206, 209, 0.3);
+                        pointer-events: none;
+                        z-index: 30;
+                        transition: opacity 0.3s, transform 0.3s;
+                        transform: scale(0.1);
+                        opacity: 1;
+                    `;
+                    dom.gameContainer.appendChild(effect);
+                    
+                    setTimeout(() => {
+                        effect.style.transform = 'scale(1)';
+                    }, 10); 
+                    setTimeout(() => {
+                        effect.style.opacity = '0';
+                    }, 100); 
+                    setTimeout(() => {
+                        effect.remove();
+                    }, 400); 
+                }
+            }
+            
+            findTarget(enemies) { /* Ne fait rien */ }
+        }
+
+        class Projectile {
+            constructor(startX, startY, target, damage, type) {
+                this.pos = { x: startX, y: startY };
+                this.target = target;
+                this.damage = damage;
+                this.speed = 25;
+                this.type = type;
+                this.element = this.createElement(type);
+            }
+
+            createElement(type) {
+                const element = document.createElement('div');
+                element.className = 'projectile ' + type.toLowerCase();
+                element.style.left = (this.pos.x - 2) + 'px';
+                element.style.top = (this.pos.y - 2) + 'px';
+                return element;
+            }
+
+            move() {
+                if (!this.target || this.target.hp <= 0) return true;
+
+                const targetPos = this.target.pos;
+                const dx = targetPos.x - this.pos.x;
+                const dy = targetPos.y - this.pos.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < this.speed) {
+                    const died = this.target.takeDamage(this.damage);
+                    if (died) addGold(this.target.reward);
+                    return true;
+                } else {
+                    this.pos.x += (dx / dist) * this.speed;
+                    this.pos.y += (dy / dist) * this.speed;
+                    this.element.style.left = (this.pos.x - 2) + 'px';
+                    this.element.style.top = (this.pos.y - 2) + 'px';
+                    return false;
+                }
+            }
+        }
+
+        class Enemy extends Unit {
+            constructor(id, type, hp, speed, reward, isBoss, startPos) {
+                const isDragon = type === 'dragon';
+                const baseHp = hp;
+                const baseSpeed = speed;
+                const size = isDragon ? 50 : 24;
+                const offset = isDragon ? 25 : 12;
+                const hitboxRadius = isDragon ? config.DRAGON_HITBOX_RADIUS : config.ENEMY_HITBOX_RADIUS;
+                const damage = isDragon ? 100 : 15;
+                
+                super(id, type, startPos.x, startPos.y, baseHp, baseHp, size, offset);
+                
+                // --- DÉBUT DU CORRECTIF MONSTRE INVISIBLE ---
+                const visualIcon = (type === 'dragon') ? '🐉' : '🧟'; 
+                this.element.setAttribute('data-visual', visualIcon);
+                // --- FIN DU CORRECTIF MONSTRE INVISIBLE ---
+
+                this.baseSpeed = baseSpeed;
+                this.currentSpeed = baseSpeed;
+                this.reward = reward;
+                this.damage = damage;
+                this.isBoss = isBoss;
+                this.hitboxRadius = hitboxRadius;
+                this.slowEnd = 0;
+                this.slowFactor = 1;
+
+                if (isBoss) {
+                    this.element.style.border = '4px solid gold';
+                    this.element.style.transform = 'scale(1.2)';
+                }
+            }
+            
+            applySlow(factor, duration) {
+                const now = Date.now();
+                if (factor < this.slowFactor || now + duration > this.slowEnd) {
+                    this.slowFactor = factor;
+                    this.slowEnd = now + duration;
+                    this.currentSpeed = this.baseSpeed * this.slowFactor;
+                    this.element.classList.add('slowed');
+                }
+            }
+            
+            updateSpeed() {
+                const now = Date.now();
+                if (now > this.slowEnd) {
+                    this.slowFactor = 1;
+                    this.currentSpeed = this.baseSpeed;
+                    this.element.classList.remove('slowed');
+                } else {
+                    this.currentSpeed = this.baseSpeed * this.slowFactor;
+                }
+            }
+
+            move() {
+                this.updateSpeed();
+                
+                const targetPos = castle.pos;
+                const dx = targetPos.x - this.pos.x;
+                const dy = targetPos.y - this.pos.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                // La distance de collision est basée sur la somme des rayons (hitbox ennemi + rayon château)
+                const castleCollisionRadius = 40; 
+                if (dist < castleCollisionRadius) { 
+                    castle.takeDamage(this.damage);
+                    return true;
+                } else {
+                    this.pos.x += (dx / dist) * this.currentSpeed;
+                    this.pos.y += (dy / dist) * this.currentSpeed;
+                }
+
+                this.element.style.left = (this.pos.x - this.offset) + 'px';
+                this.element.style.top = (this.pos.y - this.offset) + 'px';
+                
+                return false;
+            }
+        }
+        
+        // --- Fonctions Utilitaires ---
+
+        function distance(p1, p2) {
+            const dx = p1.x - p2.x;
+            const dy = p1.y - p2.y;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+
+        function updateUI() {
+            dom.gold.textContent = gold;
+            dom.wave.textContent = wave;
+            dom.enemiesRemaining.textContent = enemies.length;
+            
+            const archerCost = config.TOWER_TYPES.ARCHER.lvl1.cost;
+            const magicCost = config.TOWER_TYPES.MAGIC.lvl1.cost;
+            const frostCost = config.TOWER_TYPES.FROST.lvl1.cost;
+            
+            dom.selectTower1Btn.textContent = `Tir d'Arc (${archerCost} Or)`;
+            dom.selectTower2Btn.textContent = `Tour Magique (${magicCost} Or)`;
+            dom.selectTower3Btn.textContent = `Tour de Givre (${frostCost} Or)`;
+
+            dom.selectTower1Btn.disabled = gold < archerCost;
+            dom.selectTower2Btn.disabled = gold < magicCost;
+            dom.selectTower3Btn.disabled = gold < frostCost;
+            dom.nextWaveBtn.disabled = isWaveActive;
+            
+            if (currentBuildType) {
+                const typeName = config.TOWER_TYPES[currentBuildType].name;
+                const cost = config.TOWER_TYPES[currentBuildType].lvl1.cost;
+                dom.currentMode.innerHTML = `Mode: **Construction de ${typeName} (${cost} Or)**`;
+            } else {
+                dom.currentMode.innerHTML = 'Mode: **Sélection (ou Inactif)**';
+            }
+            
+            updateSelectedTowerInfo();
+        }
+
+        function addGold(amount) {
+            gold += amount;
+            updateUI();
+        }
+        
+        function showMessage(text, duration = 3000) {
+            console.log(`[MESSAGE JEU]: ${text}`);
+            
+            const infoDiv = document.createElement('div');
+            infoDiv.textContent = text;
+            infoDiv.style.cssText = 'position: absolute; bottom: 10px; right: 270px; padding: 5px 10px; background: #000; color: var(--resource-color); border-radius: 5px; z-index: 1000; opacity: 0.9; transition: opacity 0.5s;';
+            document.body.appendChild(infoDiv);
+            
+            setTimeout(() => {
+                infoDiv.style.opacity = '0';
+                setTimeout(() => infoDiv.remove(), 500);
+            }, duration);
+        }
+        
+        // --- Logique de Sélection, Amélioration, Vente ---
+
+        function hideRangeVisual() {
+            dom.selectedRangeVisual.style.display = 'none';
+        }
+
+        function showRangeVisual(tower) {
+            const range = tower.range;
+            const diameter = range * 2;
+            
+            dom.selectedRangeVisual.style.width = diameter + 'px';
+            dom.selectedRangeVisual.style.height = diameter + 'px';
+            dom.selectedRangeVisual.style.left = tower.pos.x + 'px';
+            dom.selectedRangeVisual.style.top = tower.pos.y + 'px';
+            dom.selectedRangeVisual.style.display = 'block';
+        }
+
+        function selectTower(tower) {
+            currentBuildType = null;
+            dom.gameContainer.classList.remove('build-mode');
+            
+            // Masque la prévisualisation de construction
+            dom.placementRangePreview.style.display = 'none';
+            dom.placementIconVisual.style.display = 'none';
+            dom.gameContainer.classList.remove('placement-archer', 'placement-magic', 'placement-frost');
+            
+            if (selectedTower) selectedTower.element.classList.remove('selected');
+            
+            selectedTower = tower;
+            if (selectedTower) {
+                 selectedTower.element.classList.add('selected');
+                 updateSelectedTowerInfo();
+                 showRangeVisual(tower); // Affiche la portée
+            } else {
+                 updateSelectedTowerInfo();
+            }
+        }
+        
+        function updateSelectedTowerInfo() {
+            if (selectedTower) {
+                const towerData = config.TOWER_TYPES[selectedTower.towerType];
+                dom.towerName.textContent = `${towerData.name} (Niv ${selectedTower.level})`;
+                dom.towerStats.innerHTML = `Dégâts: ${selectedTower.damage} | Portée: ${selectedTower.range} | Cadence: ${selectedTower.attackRate / 1000}s`;
+                dom.towerUniqueStat.textContent = `Unique: ${towerData.unique}`;
+                
+                if (selectedTower.towerType === 'FROST') {
+                    const stats = towerData['lvl' + selectedTower.level];
+                    dom.towerStats.innerHTML = `Portée: ${selectedTower.range} | Fréquence: ${selectedTower.attackRate / 1000}s`;
+                    dom.towerUniqueStat.textContent = `Ralentissement: ${Math.round((1 - stats.slow) * 100)}% pendant ${stats.slowDuration / 1000}s`;
+                }
+
+                dom.sellBtn.disabled = false;
+                dom.sellBtn.textContent = `Vendre (${selectedTower.sellValue} Or)`;
+                
+                const upgradeCost = selectedTower.level < 2 ? config.TOWER_TYPES[selectedTower.towerType].lvl2.cost : 0;
+                
+                if (selectedTower.level < 2) {
+                    dom.upgradeBtn.disabled = gold < upgradeCost;
+                    dom.upgradeBtn.textContent = `Améliorer (${upgradeCost} Or)`;
+                } else {
+                    dom.upgradeBtn.disabled = true;
+                    dom.upgradeBtn.textContent = 'MAX';
+                }
+            } else {
+                dom.towerName.textContent = 'Aucune.';
+                dom.towerStats.innerHTML = 'Stats : --';
+                dom.towerUniqueStat.textContent = 'Unique : --';
+                dom.upgradeBtn.disabled = true;
+                dom.sellBtn.disabled = true;
+                dom.upgradeBtn.textContent = 'Améliorer (0 Or)';
+                dom.sellBtn.textContent = 'Vendre (0 Or)';
+                hideRangeVisual(); // Cache la portée
+            }
+        }
+        
+        function sellSelectedTower() {
+            if (!selectedTower) return;
+            const value = selectedTower.sellValue;
+            
+            towers = towers.filter(t => t.id !== selectedTower.id);
+            
+            selectedTower.remove();
+            
+            addGold(value);
+            
+            showMessage(`Tour vendue pour ${value} Or!`, 2000);
+            selectedTower = null;
+            updateSelectedTowerInfo();
+        }
+        
+        function upgradeSelectedTower() {
+            if (selectedTower && selectedTower.level < 2) {
+                selectedTower.upgrade();
+            }
+        }
+
+        // --- Logique de Construction ---
+
+        function enableBuildMode(type) {
+            if (selectedTower) {
+                selectedTower.element.classList.remove('selected');
+                selectedTower = null;
+                hideRangeVisual();
+            }
+
+            const newType = type;
+            const typeClass = newType.toLowerCase();
+
+            // S'assurer que les classes de couleur sont nettoyées pour ne pas empiler les styles
+            dom.placementIconVisual.classList.remove('archer', 'magic', 'frost');
+            dom.gameContainer.classList.remove('placement-archer', 'placement-magic', 'placement-frost');
+
+            if (currentBuildType === newType) {
+                // Désactivation du mode construction
+                currentBuildType = null;
+                dom.gameContainer.classList.remove('build-mode');
+                dom.placementRangePreview.style.display = 'none';
+                dom.placementIconVisual.style.display = 'none';
+            } else {
+                // Activation du mode construction
+                currentBuildType = newType;
+                dom.gameContainer.classList.add('build-mode');
+                // Ajout de la classe pour le style et l'icône de la tour
+                dom.placementIconVisual.classList.add(typeClass); 
+            }
+            updateUI();
+        }
+
+        function handleMouseMove(e) {
+            if (!currentBuildType) return;
+
+            const rect = dom.gameContainer.getBoundingClientRect();
+            // Calcule la position (x, y) relative au conteneur du jeu
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const range = config.TOWER_TYPES[currentBuildType].lvl1.range;
+            
+            // 1. Positionnement du cercle de portée (#placement-range-preview)
+            // Centré sur (x, y)
+            dom.placementRangePreview.style.left = x + 'px';
+            dom.placementRangePreview.style.top = y + 'px';
+            dom.placementRangePreview.style.width = (range * 2) + 'px';
+            dom.placementRangePreview.style.height = (range * 2) + 'px';
+            dom.placementRangePreview.style.display = 'block';
+            
+            // 2. Positionnement de l'icône de tour (#placement-icon-visual)
+            // L'icône se positionne à (x, y). Le CSS gère le centrage (transform: translate(-50%, -50%))
+            dom.placementIconVisual.style.left = x + 'px';
+            dom.placementIconVisual.style.top = y + 'px';
+            dom.placementIconVisual.style.display = 'block';
+
+
+            const canPlace = checkPlacementValidity(x, y);
+            // Ajout/Retrait de la classe 'invalid' pour changer le style du cercle de portée
+            dom.placementRangePreview.classList.toggle('invalid', !canPlace); 
+            // Ajout/Retrait de la classe 'invalid' pour changer le style de l'icône (si vous voulez la rendre rouge)
+            dom.placementIconVisual.classList.toggle('invalid', !canPlace);
+        }
+
+        function checkPlacementValidity(x, y) {
+            const towerCenter = { x, y };
+            const castlePadding = config.TOWER_PLACEMENT_PADDING;
+            const towerRad = config.TOWER_COLLISION_RADIUS;
+
+            // 1. Collision avec le château
+            const distToCastleCenter = distance(towerCenter, config.CASTLE_CENTER);
+            if (distToCastleCenter < castlePadding) return false;
+
+            // 2. Collision avec une autre tour
+            for (const tower of towers) {
+                const dist = distance(towerCenter, tower.pos);
+                if (dist < towerRad * 2) { 
+                    return false;
+                }
+            }
+            
+            // 3. Limites de la carte (assure que le centre de la tour est à l'intérieur)
+            const mapW = 900; // Utilisation directe des dimensions CSS ou variables
+            const mapH = 700;
+            if (x < towerRad || x > mapW - towerRad || y < towerRad || y > mapH - towerRad) {
+                return false;
+            }
+
+            return true;
+        }
+        
+        function placeTower(e) {
+            if (!currentBuildType) return;
+            
+            const rect = dom.gameContainer.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const typeData = config.TOWER_TYPES[currentBuildType];
+            const cost = typeData.lvl1.cost;
+            
+            if (!checkPlacementValidity(x, y)) {
+                showMessage("Emplacement invalide : trop près du château, d'une autre tour, ou hors limites.", 2000);
+                return;
+            }
+
+            if (gold < cost) {
+                showMessage("Erreur: Pas assez d'or!", 1500);
+                return;
+            }
+
+            addGold(-cost);
+            towerIdCounter++;
+            
+            let newTower;
+            if (currentBuildType === 'FROST') {
+                newTower = new FrostTower(towerIdCounter, x, y);
+            } else {
+                newTower = new Tower(towerIdCounter, x, y, currentBuildType);
+            }
+            
+            towers.push(newTower);
+            dom.towersContainer.appendChild(newTower.element);
+
+            // Mise à jour de la position de l'élément DOM de la nouvelle tour
+            newTower.element.style.left = x + 'px';
+            newTower.element.style.top = y + 'px';
+
+            currentBuildType = null;
+            // Nettoyage après la construction
+            dom.gameContainer.classList.remove('build-mode');
+            dom.placementRangePreview.classList.remove('invalid'); 
+            dom.placementRangePreview.style.display = 'none';
+            dom.placementIconVisual.style.display = 'none';
+            dom.placementIconVisual.classList.remove('archer', 'magic', 'frost', 'invalid'); 
+            updateUI();
+            
+            selectTower(newTower);
+        }
+
+        // --- Logique de Vague ---
+
+        let enemiesToSpawn = [];
+        let spawnTimer = 0;
+        let totalEnemiesInWave = 0;
+
+        function startNextWave() {
+            if (isWaveActive) return;
+            if (wave >= config.WAVE_DATA.length) {
+                 gameOver(true);
+                 return;
+            }
+
+            wave++;
+            isWaveActive = true;
+            lastWaveGoldBonus = 50 + wave * 10;
+            
+            const waveConfig = config.WAVE_DATA[wave - 1];
+            enemiesToSpawn = [];
+            totalEnemiesInWave = 0;
+
+            waveConfig.forEach(group => {
+                totalEnemiesInWave += group.count;
+                for (let i = 0; i < group.count; i++) {
+                    const spawnIndex = i % config.SPAWN_POINTS.length; 
+                    enemiesToSpawn.push({ 
+                        type: group.type, 
+                        hp: group.hp, 
+                        speed: group.speed, 
+                        reward: group.reward,
+                        isBoss: group.isBoss || false,
+                        spawnPoint: config.SPAWN_POINTS[spawnIndex] 
+                    });
+                }
+            });
+            enemiesToSpawn.sort(() => Math.random() - 0.5); 
+            
+            spawnTimer = 0; 
+            updateUI();
+            showMessage(`Vague ${wave} : L'assaut commence ! ${totalEnemiesInWave} ennemis.`, 2000);
+        }
+
+        function spawnEnemy() {
+            if (enemiesToSpawn.length === 0) return;
+
+            const data = enemiesToSpawn.shift();
+            enemyIdCounter++;
+            const newEnemy = new Enemy(enemyIdCounter, data.type, data.hp, data.speed, data.reward, data.isBoss, data.spawnPoint);
+            enemies.push(newEnemy);
+            dom.enemiesContainer.appendChild(newEnemy.element);
+        }
+
+        function checkWaveStatus() {
+            if (isWaveActive && enemiesToSpawn.length === 0 && enemies.length === 0) {
+                isWaveActive = false;
+                showMessage(`Vague ${wave} Repoussée ! +${lastWaveGoldBonus} Or Bonus`, 3000);
+                addGold(lastWaveGoldBonus);
+                updateUI();
+                
+                if (wave === config.WAVE_DATA.length) {
+                    gameOver(true);
+                }
+            }
+        }
+
+        // --- Boucle de Jeu Principale ---
+
+        function gameLoop() {
+            // 1. Logique de Vague et Spawn
+            if (isWaveActive) {
+                spawnTimer += config.GAME_TICK;
+                const spawnInterval = Math.max(500, config.ENEMY_SPAWN_INTERVAL - wave * 50); 
+                if (enemiesToSpawn.length > 0 && spawnTimer >= spawnInterval) {
+                    spawnEnemy();
+                    spawnTimer = 0; 
+                }
+            }
+
+            // 2. Mouvement et Suppression des Unités
+            enemies = enemies.filter(enemy => {
+                const reachedEnd = enemy.move();
+                if (reachedEnd || enemy.hp <= 0) {
+                    if (enemy.hp <= 0) addGold(enemy.reward);
+                    enemy.remove();
+                    return false;
+                }
+                return true;
+            });
+            
+            // 3. Logique des Tours et Attaques
+            towers.forEach(tower => {
+                // Les tours de support (FrostTower) attaquent sans cible
+                if (!tower.isAttacker) {
+                    tower.attack();
+                } else {
+                    // Les tours d'attaque cherchent une cible et attaquent
+                    tower.findTarget(enemies);
+                    tower.attack();
+                }
+            });
+            
+            // 4. Mouvement et Suppression des Projectiles
+            projectiles = projectiles.filter(p => {
+                const hit = p.move();
+                if (hit) p.element.remove();
+                return !hit;
+            });
+
+            // 5. Mettre à jour l'état du Jeu
+            checkWaveStatus();
+            castle.updateDisplay();
+            updateUI();
+            
+            // Mise à jour de la portée si une tour est sélectionnée
+            if (selectedTower) showRangeVisual(selectedTower);
+        }
+        
+        // --- Initialisation et Fin de Partie ---
+
+        let castle;
+
+        function initGame() {
+            gold = config.START_GOLD;
+            wave = 0;
+            isWaveActive = false;
+            enemies = [];
+            towers = [];
+            projectiles = [];
+            currentBuildType = null;
+            selectedTower = null;
+            
+            dom.towersContainer.innerHTML = '';
+            dom.enemiesContainer.innerHTML = '';
+            dom.projectilesContainer.innerHTML = '';
+            dom.overlay.style.display = 'none';
+            dom.gameContainer.classList.remove('build-mode');
+            dom.nextWaveBtn.textContent = 'Lancer Vague Suivante';
+            
+            // Masquer les prévisualisations
+            dom.placementRangePreview.style.display = 'none';
+            dom.placementIconVisual.style.display = 'none';
+            dom.placementIconVisual.classList.remove('archer', 'magic', 'frost', 'invalid'); 
+            dom.selectedRangeVisual.style.display = 'none';
+            
+            castle = new Castle(config.CASTLE_HP);
+            castle.updateDisplay();
+            
+            // Événements
+            dom.selectTower1Btn.onclick = () => enableBuildMode('ARCHER');
+            dom.selectTower2Btn.onclick = () => enableBuildMode('MAGIC');
+            dom.selectTower3Btn.onclick = () => enableBuildMode('FROST');
+            dom.nextWaveBtn.onclick = startNextWave;
+            dom.overlayRestartBtn.onclick = initGame;
+            dom.gameContainer.onclick = placeTower;
+            dom.gameContainer.onmousemove = handleMouseMove;
+
+            dom.upgradeBtn.onclick = upgradeSelectedTower;
+            dom.sellBtn.onclick = sellSelectedTower;
+
+            dom.gameContainer.oncontextmenu = (e) => {
+                e.preventDefault(); 
+                if (currentBuildType) {
+                    currentBuildType = null;
+                    dom.gameContainer.classList.remove('build-mode');
+                    dom.placementRangePreview.style.display = 'none';
+                    dom.placementIconVisual.style.display = 'none';
+                    dom.placementIconVisual.classList.remove('archer', 'magic', 'frost', 'invalid'); 
+                    updateUI();
+                } else {
+                    selectTower(null); // Désélectionne la tour
+                }
+            }; 
+
+            if (gameLoopInterval) clearInterval(gameLoopInterval);
+            gameLoopInterval = setInterval(gameLoop, config.GAME_TICK);
+            
+            updateUI();
+            showMessage("V4.3 : UI recadrée et monstres visibles (🧟/🐉). Bon jeu !", 7000);
+        }
+
+        function gameOver(isVictory) {
+            clearInterval(gameLoopInterval);
+            dom.gameContainer.onclick = null;
+            dom.gameContainer.onmousemove = null;
+            hideRangeVisual();
+            if (isVictory) {
+                showOverlay("🎉 VICTOIRE TOTALE ! 🎉", `Vous avez repoussé les ${config.WAVE_DATA.length} vagues !`);
+            } else {
+                showOverlay("💀 DÉFAITE ! 💀", `Le Château est tombé à la Vague ${wave}. La défense a été brisée.`);
+            }
+        }
+        
+        function showOverlay(title, message) {
+            dom.overlayTitle.textContent = title;
+            dom.overlayMessage.textContent = message;
+            dom.overlay.style.display = 'flex';
+        }
+
+        // Lancement du jeu
+        initGame();
+
+        // Fin du JavaScript
+    </script>
+
+</body>
+</html>

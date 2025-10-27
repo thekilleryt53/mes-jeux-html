@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Mini-RPG 2D - Refonte Graphique V3 Cinématique</title>
+    <link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ------------------------- PALETTE ET STYLES GLOBAUX ------------------------- */
+        :root {
+            --bg-color: #050005;
+            --canvas-bg-dark: #100210;
+            --canvas-bg-light: #250425;
+            --accent-color-red: #ff3366; /* Magenta vif / Plasma */
+            --accent-color-purple: #9b28a5; /* Néon Violet */
+            --main-text-color: #f0e0f0;
+            --panel-bg: rgba(5, 0, 5, 0.65); 
+            --border-color: #ff3366; 
+        }
+
+        ::selection {
+            background: var(--accent-color-red);
+            color: var(--bg-color);
+            text-shadow: none;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: radial-gradient(circle at 50% 50%, #0a000a 0%, #020102 70%, #000000 100%);
+            font-family: 'Audiowide', sans-serif;
+            color: var(--main-text-color);
+            overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%); /* Opacité augmentée */
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 101; 
+            opacity: 0.3; /* Scanlines plus visibles */
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle, transparent 60%, rgba(0,0,0,0.85) 100%); /* Vignette plus forte */
+            pointer-events: none;
+            z-index: 102; 
+        }
+
+
+        /* --- AMÉLIORATION: Keyframes pour UI dynamique PLUS INTENSE --- */
+        
+        /* Pulsation pour les bordures de panneau */
+        @keyframes panelBorderPulse {
+            from { 
+                border-color: rgba(255, 51, 102, 0.9);
+                border-top-color: rgba(255, 51, 102, 1);
+                box-shadow: 
+                    0 0 10px rgba(255, 51, 102, 0.75),
+                    0 0 25px rgba(255, 51, 102, 0.35),
+                    0 8px 15px rgba(0, 0, 0, 0.5),
+                    inset 0 0 15px rgba(255, 51, 102, 0.4); 
+            }
+            to { 
+                border-color: rgba(255, 120, 160, 1);
+                border-top-color: rgba(255, 160, 200, 1);
+                box-shadow: 
+                    0 0 15px rgba(255, 51, 102, 0.9),
+                    0 0 40px rgba(255, 51, 102, 0.6),
+                    0 10px 20px rgba(0, 0, 0, 0.6),
+                    inset 0 0 20px rgba(255, 51, 102, 0.6);
+            }
+        }
+        
+        /* Pulsation pour le texte important (Jaune/Or) */
+        @keyframes neonPulseYellow {
+            0% { text-shadow: 0 0 10px #ffea00; }
+            50% { text-shadow: 0 0 20px #fff000, 0 0 8px #ff6600; }
+            100% { text-shadow: 0 0 10px #ffea00; }
+        }
+        
+        /* Pulsation pour les stats (Vert) */
+        @keyframes neonPulseGreen {
+            0% { text-shadow: 0 0 5px #00ff00; }
+            50% { text-shadow: 0 0 12px #77ff77, 0 0 5px #009900; }
+            100% { text-shadow: 0 0 5px #00ff00; }
+        }
+
+        /* ------------------------- CANVAS (MAP) PLUS LUMINEUX ------------------------- */
+        
+        @keyframes pulse-glow {
+            0% { 
+                box-shadow: 0 0 80px rgba(255, 51, 102, 0.6), /* Lueur plus large */
+                            0 0 10px rgba(0, 0, 0, 0.9),
+                            inset 0 0 12px rgba(255, 255, 255, 0.1);
+            }
+            50% { 
+                box-shadow: 0 0 110px rgba(255, 51, 102, 0.8), /* Lueur encore plus large */
+                            0 0 10px rgba(0, 0, 0, 0.9),
+                            inset 0 0 15px rgba(255, 255, 255, 0.15);
+            }
+            100% { 
+                box-shadow: 0 0 80px rgba(255, 51, 102, 0.6),
+                            0 0 10px rgba(0, 0, 0, 0.9),
+                            inset 0 0 12px rgba(255, 255, 255, 0.1);
+            }
+        }
+
+        #gameCanvas {
+            border: 8px solid var(--accent-color-red); /* Bordure plus épaisse */
+            background: linear-gradient(to bottom right, var(--canvas-bg-dark), var(--canvas-bg-light));
+            
+            box-shadow: 0 0 100px rgba(255, 51, 102, 0.7), /* Lueur initiale très forte */
+                        0 0 10px rgba(0, 0, 0, 0.9),
+                        inset 0 0 8px rgba(255, 255, 255, 0.08);
+            animation: pulse-glow 3s infinite ease-in-out;
+
+            background-image: linear-gradient(0deg, transparent 97%, rgba(255, 255, 255, 0.05) 97%), 
+                              linear-gradient(90deg, transparent 97%, rgba(255, 255, 255, 0.05) 97%); /* Grille plus visible */
+            background-size: 30px 30px;
+        }
+
+        /* ------------------------- EFFET DE BROUILLARD ------------------------- */
+        #fog-overlay {
+            position: absolute;
+            width: 900px;
+            height: 650px;
+            pointer-events: none;
+            z-index: 100;
+            mix-blend-mode: screen; 
+            opacity: 0.45; /* Brouillard plus présent */
+        }
+
+        /* ------------------------- HUD ET PANNEAUX DE STATS (Refonte PLUS INTENSE) ------------------------- */
+        .ui-panel {
+            position: fixed;
+            padding: 18px; /* Plus de padding */
+            
+            /* Fond de verre réaliste */
+            background-color: rgba(15, 2, 15, 0.7); /* Fond plus opaque */
+            background-image: 
+                linear-gradient(160deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 35%),
+                linear-gradient(135deg, rgba(40, 10, 40, 0.75) 0%, rgba(15, 2, 15, 0.8) 100%);
+
+            backdrop-filter: blur(10px); /* Plus de flou */
+            
+            /* Bordures Vives */
+            border: 2px solid rgba(255, 51, 102, 0.8); 
+            border-top-color: rgba(255, 200, 220, 1); 
+            border-radius: 6px;
+            
+            /* EFFET DE LUEUR ET PROFONDEUR INTENSIFIÉ */
+            box-shadow: 
+                inset 0 0 8px rgba(0, 0, 0, 0.9), 
+                inset 0 0 15px rgba(255, 255, 255, 0.08),
+                0 0 20px rgba(255, 51, 102, 0.7),
+                0 0 40px rgba(255, 51, 102, 0.35),
+                0 8px 20px rgba(0, 0, 0, 0.7);
+
+            font-size: 15px;
+            color: var(--main-text-color);
+            text-shadow: 0 0 8px rgba(255, 51, 102, 0.6);
+            font-family: 'Audiowide', sans-serif;
+            z-index: 110;
+            
+            animation: panelBorderPulse 2.5s infinite alternate ease-in-out;
+        }
+
+        #info-panel { top: 20px; left: 20px; width: 280px; }
+        #wave-ui { top: 20px; right: 20px; text-align: right; }
+        #stats-panel { bottom: 20px; right: 20px; width: 300px; }
+        
+        #wave-ui div {
+            color: #fff0b0; 
+            text-shadow: 0 0 12px #fff000, 0 0 4px #ff6600; 
+            animation: neonPulseYellow 2s infinite ease-in-out;
+        };
+
+        .stat-line {
+            display: flex; justify-content: space-between; margin-bottom: 6px;
+        }
+       .stat-value {
+            color: #00ff00; 
+            text-shadow: 0 0 5px #00ff00, 0 0 10px #77ff77;
+            animation: neonPulseGreen 2.5s infinite ease-in-out;
+        }
+
+        /* ------------------------- ÉCRAN D'AMÉLIORATION (Level Up) PLUS SPECTACULAIRE ------------------------- */
+        #upgrade-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.98); /* Encore plus sombre */
+            backdrop-filter: blur(15px);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 200;
+        }
+
+        #upgrade-screen h1 {
+            color: #ffea00;
+            text-shadow: 0 0 30px #ffea00, 0 0 50px #ff6600; /* Lueur accrue */
+            font-size: 4.5em;
+            margin-bottom: 15px;
+            letter-spacing: 7px;
+            animation: flicker 0.8s infinite alternate; /* Scintillement plus rapide */
+        }
+
+        @keyframes flicker {
+            0% { opacity: 0.95; text-shadow: 0 0 20px #ffea00; }
+            50% { opacity: 0.85; text-shadow: 0 0 35px #ffea00, 0 0 40px #ff6600; }
+            100% { opacity: 0.95; text-shadow: 0 0 20px #ffea00; }
+        }
+        
+        #upgrade-options-container { display: flex; gap: 60px; margin-top: 40px;}
+
+        .upgrade-option {
+            background-color: #030005;
+            background-image: 
+                linear-gradient(160deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0) 30%),
+                linear-gradient(135deg, rgba(60, 20, 60, 0.6) 0%, rgba(10, 2, 10, 0.8) 100%);
+            
+            /* Bordure Plus Vive */
+            border: 3px solid var(--accent-color-purple); 
+            border-top-color: #f0a0ff; 
+            
+            width: 300px; /* Plus large */
+            padding: 40px 25px;
+            cursor: pointer;
+            border-radius: 12px;
+            
+            /* OMBRES ET LUEUR INTENSIFIÉES */
+            box-shadow: 
+                0 0 30px rgba(155, 40, 165, 0.8),
+                0 0 50px rgba(155, 40, 165, 0.4),
+                0 10px 20px rgba(0,0,0,0.5), 
+                inset 0 0 10px rgba(255, 255, 255, 0.1); 
+            
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upgrade-option:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 75%;
+            height: 100%;
+            background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%); /* Reflet plus lumineux */
+            transform: skewX(-25deg);
+            pointer-events: none;
+            transition: left 0.4s ease-out; /* Reflet plus rapide */
+        }
+
+        .upgrade-option:hover {
+            background-color: #2a0338;
+            border-color: var(--accent-color-red);
+            transform: scale(1.1);
+            box-shadow: 
+                0 0 50px var(--accent-color-red), 
+                0 0 80px rgba(255, 51, 102, 0.4); 
+        }
+
+        .upgrade-option:hover:before {
+            left: 120%;
+        }
+
+        .upgrade-title {
+            font-size: 2em;
+            color: #ffffcc;
+            margin-bottom: 5px;
+            text-shadow: 0 0 10px #ffcc00, 0 0 20px #ff6600;
+        }
+
+        .upgrade-description {
+            font-size: 1.1em;
+            color: #ddd;
+            font-family: sans-serif;
+            margin-top: 15px;
+        }
+        
+        /* ------------------------- Autres messages ------------------------- */
+        
+        @keyframes simpleFadeIn {
+            from { opacity: 0; transform: scale(1.05); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        #wave-transition-screen, #game-over-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.99);
+            backdrop-filter: blur(10px);
+            display: none;
+            color: white;
+            font-size: 5em; /* Plus grand */
+            text-align: center;
+            line-height: 100vh;
+            z-index: 150;
+            animation: simpleFadeIn 1.5s; /* Animation plus longue */
+        }
+        #game-over-screen { cursor: pointer; color: var(--accent-color-red); text-shadow: 0 0 30px var(--accent-color-red), 0 0 60px rgba(255, 51, 102, 0.5); }
+        #wave-transition-screen { color: gold; text-shadow: 0 0 30px gold, 0 0 60px rgba(255, 215, 0, 0.5); }
+    
+/* ----------- FOND SPATIAL PROFOND (cyan mystique) ----------- */
+#starfield, #nebula {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -2;
+}
+
+#nebula {
+  z-index: -3;
+  opacity: 0.55; /* Nébuleuse plus opaque */
+  background: radial-gradient(circle at 50% 40%, #001a33 0%, #000010 70%, #000 100%);
+}
+</style>
+
+</head>
+<body>
+<canvas id="starfield"></canvas>
+<canvas id="nebula"></canvas>
+
+    
+    <div id="info-panel" class="ui-panel">
+        <div style="font-size: 1.3em; border-bottom: 3px solid var(--accent-color-red); padding-bottom: 8px; margin-bottom: 12px; color: var(--accent-color-red); text-shadow: 0 0 8px rgba(255, 51, 102, 0.8);">CONTROLS & OBJECTIFS</div>
+        <div>Déplacement: **WASD** ou **ZQSD**</div>
+        <div>Attaque: **ESPACE** (Auto-rapide)</div>
+        <div id="kill-count" style="margin-top: 15px; color: #ffebcd; font-size: 1.1em;">Monstres vaincus (total) : 0</div>
+    </div>
+    
+    <div id="wave-ui" class="ui-panel">
+        <div id="current-wave-display" style="font-size: 2em; letter-spacing: 2px;">VAGUE : 0</div>
+        <div id="monsters-remaining-display" style="font-size: 1.5em; margin-top: 5px;">Monstres restants : 0 / 0</div>
+    </div>
+    
+    <div id="stats-panel" class="ui-panel">
+        <h3 style="color: #ffebcd; text-shadow: 0 0 8px #ffebcd; border-bottom: 2px solid var(--accent-color-red); padding-bottom: 8px; margin-top: 0;">STATISTIQUES JOUEUR</h3>
+        <div class="stat-line"><span id="stat-level"></span><span class="stat-value"></span></div>
+        <div class="stat-line"><span>Dégâts Totaux :</span><span id="stat-damage" class="stat-value"></span></div>
+        <div class="stat-line"><span>Multiplicateur Vitesse :</span><span id="stat-speed" class="stat-value"></span></div>
+        <div class="stat-line"><span>Défense :</span><span id="stat-defense" class="stat-value"></span></div>
+        <div class="stat-line"><span>Régénération PV :</span><span id="stat-regen" class="stat-value"></span></div>
+        <div class="stat-line"><span>Orbes Orbitaux :</span><span id="stat-orbs" class="stat-value"></span></div>
+    </div>
+
+    <canvas id="fog-overlay" width="900" height="650"></canvas>
+    <canvas id="gameCanvas" width="900" height="650"></canvas>
+    
+    <div id="upgrade-screen">
+        <h1>// MONTÉE EN NIVEAU //</h1>
+        <p style="font-size: 1.8em; color: #ffebcd;">Vous avez atteint le niveau <span id="current-upgrade-level" style="color: var(--accent-color-red);"></span>. Choisissez un talent :</p>
+        <div id="upgrade-options-container"></div>
+    </div>
+    
+    <div id="wave-transition-screen">
+        VAGUE TERMINÉE !<br>
+        <small id="transition-text" style="font-size:0.4em;"></small>
+    </div>
+    <div id="game-over-screen">
+        // ÉCHEC DE LA SIMULATION //<br><small style="font-size:0.4em;">(Cliquez pour recommencer)</small>
+    </div>
+    
+ <script>
+        /* ------------------------- CONFIG / VARIABLES GLOBALES ------------------------- */
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const fogCanvas = document.getElementById('fog-overlay');
+        const fogCtx = fogCanvas.getContext('2d');
+        const TILE_SIZE = 40;
+        let BASE_PLAYER_SPEED = 4.5;
+        let ATTACK_RANGE = 50;
+        let BASE_DAMAGE = 1;
+
+        let killCount = 0;
+        let enemies = [];
+        // let xpOrbs = []; // SUPPRIMÉ: Les orbes n'existent plus
+        let particles = [];
+        let floatingTexts = [];
+        const MAX_PARTICLES = 1500; 
+
+        let lastAttackTime = 0;
+        const ATTACK_COOLDOWN_MS = 10;
+        let playerAttackFlashTimer = 0;
+        let attackRangeVisibleTimer = 0;
+
+        let currentWave = 0;
+        let enemiesToSpawn = 0;
+        let enemiesKilledInWave = 0;
+        const BASE_ENEMIES_PER_WAVE = 3;
+        const BOSS_WAVE_INTERVAL = 5;
+
+        /* --- AMÉLIORATION VFX : Ajout du système de Screen Shake --- */
+        let screenShake = { duration: 0, magnitude: 0, x: 0, y: 0 };
+        function triggerScreenShake(duration, magnitude) {
+            screenShake.duration = Math.max(screenShake.duration, duration);
+            screenShake.magnitude = Math.max(screenShake.magnitude, magnitude);
+        }
+        /* --- FIN AMÉLIORATION VFX --- */
+
+        const GAME_STATE = {
+            PLAYING: 'PLAYING', WAVE_TRANSITION: 'WAVE_TRANSITION', LEVEL_UP: 'LEVEL_UP', GAME_OVER: 'GAME_OVER'
+        };
+        let currentState = GAME_STATE.PLAYING;
+        let waveTransitionTimer = 0; 
+
+        let playerStats = {
+            level: 1, hp: 250, maxHp: 100, xp: 0, xpToNextLevel: 50,
+            damage: BASE_DAMAGE, damageMultiplier: 1.0, defense: 0, hpRegen: 0,
+            orbLevel: 0, orbRotation: 0, speedMultiplier: 1.0
+        };
+
+        let player = {
+            x: canvas.width / 2, y: canvas.height / 2, width: TILE_SIZE, height: TILE_SIZE, color: '#ff3366' // Plasma
+        };
+
+        let keys = {
+            ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false,
+            w: false, z: false, s: false, a: false, q: false, d: false
+        };
+
+        /* ---------- UTIL : Helper Functions ---------- */
+        function rand(min, max) { return Math.random() * (max - min) + min; }
+        function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+        /* ------------------------- ENEMY STATS / CLASSES ------------------------- */
+        const ENEMY_TIER_COLORS = ['#4a1632', '#2b1a3a', '#193a2e', '#4d2e18', '#3b0f10'];
+
+        function getEnemyTierStats(waveLevel) {
+            const tierIndex = Math.floor((waveLevel - 1) / BOSS_WAVE_INTERVAL);
+            const difficultyFactor = waveLevel > 0 ? waveLevel : 1;
+            const color = ENEMY_TIER_COLORS[tierIndex % ENEMY_TIER_COLORS.length];
+
+            return {
+                color: color,
+                baseHp: Math.floor(6 + difficultyFactor * 1.25),
+                baseDamage: Math.floor(1 + difficultyFactor * 0.6),
+                baseXp: Math.floor(8 + difficultyFactor * 6),
+                size: 28 + Math.min(22, tierIndex * 4),
+                speed: Math.min(5, 1.4 + difficultyFactor * 0.12)
+            };
+        }
+
+        class Enemy {
+            constructor(x, y, waveLevel) {
+                this.x = x; this.y = y; this.waveLevel = waveLevel;
+                const s = getEnemyTierStats(waveLevel);
+                this.size = s.size; this.color = s.color;
+                this.hp = s.baseHp; this.maxHp = this.hp;
+                this.damage = s.baseDamage; this.xpValue = s.baseXp;
+                this.isAlive = true; this.speed = s.speed;
+                this.attackCooldown = 0; this.maxCooldown = 60;
+                this.type = 'Normal'; this.hitEffectTimer = 0;
+            }
+
+            update() {
+                if (!this.isAlive || currentState !== GAME_STATE.PLAYING) return;
+                const dx = player.x - this.x; const dy = player.y - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > TILE_SIZE / 2) {
+                    this.x += (dx / dist) * this.speed; this.y += (dy / dist) * this.speed;
+                }
+
+                if (dist < TILE_SIZE && this.attackCooldown <= 0) {
+                    takeDamage(this.damage); this.attackCooldown = this.maxCooldown;
+                } else if (this.attackCooldown > 0) this.attackCooldown--;
+                if (this.hitEffectTimer > 0) this.hitEffectTimer--;
+            }
+
+            draw() {
+                if (!this.isAlive) return;
+                
+                // AMÉLIORATION: Animation de pulsation
+                const pulseSize = this.size * (1 + Math.sin(Date.now() / 300 + this.x) * 0.04);
+                
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                
+                // AMÉLIORATION: Flash de dégât (blanc/rouge)
+                ctx.fillStyle = (this.hitEffectTimer > 0) ? (this.hitEffectTimer % 6 > 2 ? 'white' : '#ff5555') : this.color;
+                
+                // Ombre portée (effet 3D/profondeur)
+                ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetX = 4;
+                ctx.shadowOffsetY = 4;
+
+                ctx.fillRect(-pulseSize / 2, -pulseSize / 2, pulseSize, pulseSize);
+                
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+                
+                // Contour Néon
+                ctx.strokeStyle = '#ff3366';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(-pulseSize / 2, -pulseSize / 2, pulseSize, pulseSize);
+                ctx.restore();
+
+                // barre hp
+                const bw = this.size + 10, bh = 6, hpPercent = this.hp / this.maxHp;
+                ctx.fillStyle = 'black';
+                ctx.fillRect(this.x - bw / 2, this.y - this.size / 2 - bh - 6, bw, bh);
+                ctx.fillStyle = hpPercent > 0.5 ? '#77ff77' : hpPercent > 0.2 ? '#ffcc00' : '#ff0000';
+                ctx.fillRect(this.x - bw / 2, this.y - this.size / 2 - bh - 6, bw * hpPercent, bh);
+            }
+
+            takeDamage(dmg) {
+                const rd = Math.max(0, Math.round(dmg));
+                addFloatingText(this.x, this.y, `-${rd}`, 'orange', -2, 40, 18);
+                this.hp -= rd;
+                this.hitEffectTimer = 12;
+                createHitSparks(this.x, this.y, this.size); // MODIFIÉ: createHitGoreParticles -> createHitSparks
+                if (this.hp <= 0) { this.isAlive = false; return true; }
+                return false;
+            }
+        }
+        
+        class Boss extends Enemy {
+            constructor(x, y, waveLevel) {
+                super(x, y, waveLevel);
+                this.size = 90;
+                this.color = '#2a0000';
+                const levelFactor = Math.max(1, waveLevel / BOSS_WAVE_INTERVAL);
+                this.hp = Math.floor(this.maxHp * (6 + levelFactor * 3));
+                this.maxHp = this.hp;
+                this.damage = Math.floor(this.damage * (1 + levelFactor * 0.6));
+                this.xpValue = Math.floor(this.xpValue * 3 * levelFactor);
+                this.speed = 1 + (levelFactor * 0.12);
+                this.maxCooldown = 50;
+                this.type = 'Boss';
+            }
+
+            draw() {
+                if (!this.isAlive) return;
+
+                // AMÉLIORATION: Animation de pulsation
+                const pulseSize = this.size * (1 + Math.sin(Date.now() / 450 + this.x) * 0.03);
+
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                
+                // AMÉLIORATION: Flash de dégât (blanc/rouge)
+                ctx.fillStyle = (this.hitEffectTimer > 0) ? (this.hitEffectTimer % 6 > 2 ? 'white' : '#ff5555') : this.color;
+                
+                ctx.shadowColor = (this.hitEffectTimer > 0) ? 'red' : 'rgba(150,0,0,0.9)';
+                ctx.shadowBlur = (this.hitEffectTimer > 0) ? 30 : 18;
+                ctx.shadowOffsetX = 8;
+                ctx.shadowOffsetY = 8;
+
+                ctx.fillRect(-pulseSize / 2, -pulseSize / 2, pulseSize, pulseSize);
+                
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+
+                ctx.strokeStyle = 'goldenrod';
+                ctx.lineWidth = 6;
+                ctx.strokeRect(-pulseSize / 2, -pulseSize / 2, pulseSize, pulseSize);
+                ctx.fillStyle = 'yellow';
+                ctx.font = 'bold 16px Audiowide';
+                ctx.textAlign = 'center';
+                ctx.fillText(`BOSS VAGUE ${this.waveLevel}`, 0, -pulseSize / 2 - 28);
+                ctx.restore();
+
+                const bw = 180, bh = 12;
+                const hpPercent = this.hp / this.maxHp;
+                ctx.fillStyle = 'black';
+                ctx.fillRect(this.x - bw / 2, this.y - this.size / 2 - bh - 8, bw, bh);
+                ctx.fillStyle = hpPercent > 0.5 ? '#77ff77' : '#ff0000';
+                ctx.fillRect(this.x - bw / 2, this.y - this.size / 2 - bh - 8, bw * hpPercent, bh);
+            }
+        }
+
+        class Ghost extends Enemy {
+            constructor(x, y, waveLevel) {
+                super(x, y, waveLevel);
+                this.size = 24;
+                this.color = 'rgba(180,200,220,0.55)';
+                this.speed *= 1.6;
+                this.hp = Math.floor(this.hp * 0.6);
+                this.maxHp = this.hp;
+                this.type = 'Ghost';
+            }
+
+            draw() {
+                if (!this.isAlive) return;
+                
+                // AMÉLIORATION: Animation de pulsation
+                const pulseSize = (this.size / 2) * (1 + Math.sin(Date.now() / 200 + this.x) * 0.06);
+                
+                ctx.save();
+                
+                ctx.shadowColor = (this.hitEffectTimer > 0) ? 'white' : 'rgba(180,200,220,0.8)';
+                ctx.shadowBlur = (this.hitEffectTimer > 0) ? 15 : 10;
+                
+                ctx.globalAlpha = 0.85;
+                // AMÉLIORATION: Flash de dégât (blanc/rouge)
+                ctx.fillStyle = (this.hitEffectTimer > 0) ? (this.hitEffectTimer % 6 > 2 ? 'white' : '#ff5555') : this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, pulseSize, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+
+                const bw = this.size + 10, bh = 5, hpPercent = this.hp / this.maxHp;
+                ctx.fillStyle = 'black';
+                ctx.fillRect(this.x - bw / 2, this.y - this.size / 2 - bh - 5, bw, bh);
+                ctx.fillStyle = hpPercent > 0.5 ? '#77ff77' : hpPercent > 0.2 ? '#ffcc00' : '#ff0000';
+                ctx.fillRect(this.x - bw / 2, this.y - this.size / 2 - bh - 5, bw * hpPercent, bh);
+            }
+        }
+
+        class Tank extends Enemy {
+            constructor(x, y, waveLevel) {
+                super(x, y, waveLevel);
+                this.size = 64;
+                this.color = '#0b3d19';
+                this.speed *= 0.6;
+                this.hp = Math.floor(this.hp * 3);
+                this.maxHp = this.hp;
+                this.damage = Math.floor(this.damage * 1.6);
+                this.maxCooldown = 90;
+                this.type = 'Tank';
+            }
+
+            draw() {
+                if (!this.isAlive) return;
+                
+                // AMÉLIORATION: Animation de pulsation (plus lente)
+                const pulseSize = this.size * (1 + Math.sin(Date.now() / 600 + this.x) * 0.02);
+
+                ctx.save();
+                // AMÉLIORATION: Flash de dégât (blanc/rouge)
+                ctx.fillStyle = (this.hitEffectTimer > 0) ? (this.hitEffectTimer % 6 > 2 ? 'white' : '#ff5555') : this.color;
+                
+                ctx.shadowColor = (this.hitEffectTimer > 0) ? 'rgba(255,255,255,0.8)' : 'rgba(50,200,50,0.4)';
+                ctx.shadowBlur = (this.hitEffectTimer > 0) ? 15 : 8;
+                ctx.shadowOffsetX = 6;
+                ctx.shadowOffsetY = 6;
+
+                ctx.fillRect(this.x - pulseSize / 2, this.y - pulseSize / 2, pulseSize, pulseSize);
+                ctx.shadowBlur = 0;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 0;
+                
+                ctx.strokeStyle = '#2a1b12';
+                ctx.lineWidth = 5;
+                ctx.strokeRect(this.x - pulseSize / 2, this.y - pulseSize / 2, pulseSize, pulseSize);
+                ctx.restore();
+
+                const bw = this.size + 10, bh = 6, hpPercent = this.hp / this.maxHp;
+                ctx.fillStyle = 'black';
+                ctx.fillRect(this.x - bw / 2, this.y - this.size / 2 - bh - 6, bw, bh);
+                ctx.fillStyle = hpPercent > 0.5 ? '#77ff77' : hpPercent > 0.2 ? '#ffcc00' : '#ff0000';
+                ctx.fillRect(this.x - bw / 2, this.y - this.size / 2 - bh - 6, bw * hpPercent, bh);
+            }
+        }
+        
+        /* ------------------------- VFX : PARTICLES / GORE / HIT ------------------------- */
+        
+        /* --- AMÉLIORATION VFX : Mise à jour de la classe Particle --- */
+        class Particle {
+            constructor(x, y, color, size, velX, velY, friction = 0.96, gravity = 0, life = 80, drawType = 'fill', expandRate = 0, lineWidth = 2) {
+                this.x = x; this.y = y; this.color = color; this.size = size;
+                this.vx = velX; this.vy = velY; this.friction = friction; this.gravity = gravity;
+                this.alpha = 1; this.life = life; this.initialLife = life;
+                // Nouveaux attributs pour les ondes de choc
+                this.drawType = drawType;
+                this.expandRate = expandRate;
+                this.lineWidth = lineWidth;
+            }
+
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                this.vy += this.gravity; this.vx *= this.friction; this.vy *= this.friction;
+                this.alpha -= 1 / this.initialLife; this.life--;
+                
+                if (this.expandRate > 0) {
+                    this.size += this.expandRate;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.alpha);
+                
+                if (this.drawType === 'fill') {
+                    ctx.fillStyle = this.color;
+                    ctx.shadowColor = this.color;
+                    ctx.shadowBlur = this.size * 3; 
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, Math.max(0, this.size), 0, Math.PI * 2);
+                    ctx.fill();
+                } 
+                else if (this.drawType === 'stroke') {
+                    ctx.strokeStyle = this.color;
+                    ctx.shadowColor = this.color;
+                    ctx.shadowBlur = this.lineWidth * 4;
+                    // La ligne devient plus fine en mourant
+                    ctx.lineWidth = Math.max(0.1, this.lineWidth * (this.life / this.initialLife));
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, Math.max(0, this.size), 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+        }
+        /* --- FIN AMÉLIORATION VFX --- */
+        
+        class FloatingText {
+            constructor(x, y, text, color, velocityY = -2, life = 40, size = 18) {
+                this.x = x; this.y = y; this.text = text; this.color = color;
+                this.velocityY = velocityY; this.life = life; this.size = size;
+                this.alpha = 1;
+            }
+
+            update() {
+                this.y += this.velocityY; this.life--;
+                this.alpha = Math.max(0, this.life / 40);
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.font = `bold ${this.size}px Audiowide`; 
+                ctx.textAlign = 'center';
+                ctx.fillText(this.text, this.x, this.y);
+                ctx.restore();
+            }
+        }
+        
+        function addFloatingText(x, y, text, color, velocityY = -2, life = 40, size = 18) {
+            floatingTexts.push(new FloatingText(x, y, text, color, velocityY, life, size));
+        }
+
+        /* --- AMÉLIORATION VFX : Remplacement de createExplosionParticles --- */
+        function createExplosionParticles(x, y, color) {
+            if (particles.length >= MAX_PARTICLES) return;
+
+            // 1. L'Onde de Choc
+            particles.push(new Particle(x, y, 'rgba(255, 180, 200, 0.8)', 5, 0, 0, 1, 0, 25, 'stroke', 2.5, 3));
+
+            // 2. Le Flash vif
+            const flashNum = 5 + Math.floor(Math.random() * 5);
+            for (let i = 0; i < flashNum; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 5 + 4;
+                const size = Math.random() * 4 + 2;
+                particles.push(new Particle(x, y, 'rgba(255, 255, 255, 1)', size,
+                    Math.cos(angle) * speed, Math.sin(angle) * speed,
+                    0.90, 0, 15)); // Durée de vie très courte
+            }
+
+            // 3. Les Débris/Braises
+            const num = 12 + Math.floor(Math.random() * 12);
+            for (let i = 0; i < num; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 7 + 1;
+                const size = Math.random() * 3 + 1.5;
+                const col = Math.random() < 0.6
+                    ? `rgba(255, 51, 102, 1)` // Magenta vif (Plasma)
+                    : `rgba(160, 40, 160, 1)`; 
+                particles.push(new Particle(x, y, col, size,
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed,
+                    0.94, 0.02, 50 + Math.floor(Math.random() * 30))); // Friction et gravité légères
+            }
+        }
+        /* --- FIN AMÉLIORATION VFX --- */
+
+        /* --- AMÉLIORATION VFX : Remplacement de createHitGoreParticles --- */
+        function createHitSparks(x, y, sizeFactor) { // Renommée
+            if (particles.length >= MAX_PARTICLES) return;
+            const num = 6 + Math.floor(Math.random() * 6); // Moins de particules pour la performance
+            for (let i = 0; i < num; i++) {
+                const angle = (Math.random() * Math.PI * 2); 
+                const speed = Math.random() * 4 + 1;
+                const s = Math.random() * 2.5 + 1;
+                // Couleurs thématiques (Blanc/Rose/Rouge)
+                const c = Math.random() < 0.3 ? 'rgba(255, 255, 255, 1)' : (Math.random() < 0.5 ? 'rgba(255, 100, 200, 0.9)' : 'rgba(200, 20, 20, 0.8)');
+                
+                particles.push(new Particle(
+                    x + rand(-sizeFactor / 4, sizeFactor / 4), 
+                    y + rand(-sizeFactor / 4, sizeFactor / 4), 
+                    c, s, 
+                    Math.cos(angle) * speed, 
+                    Math.sin(angle) * speed, // Vélocité radiale pure
+                    0.90, // Friction plus forte
+                    0,    // Plus de gravité
+                    25    // Durée de vie plus courte
+                ));
+            }
+        }
+        /* --- FIN AMÉLIORATION VFX --- */
+
+        /* --- AMÉLIORATION VFX : Mise à jour de createAttackParticles --- */
+        function createAttackParticles(x, y) {
+            if (particles.length >= MAX_PARTICLES) return;
+
+            // 1. Onde de choc subtile
+            particles.push(new Particle(x, y, 'rgba(255, 51, 102, 0.5)', ATTACK_RANGE * 0.2, 0, 0, 1, 0, 10, 'stroke', ATTACK_RANGE * 0.1, 2));
+
+            // 2. Particules de "frappe"
+            const num = 10 + Math.floor(Math.random() * 8); // Un peu moins de particules
+            for (let i = 0; i < num; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 4 + 1.0;
+                const size = Math.random() * 2.5 + 1;
+                // Ajout de blanc pour un effet "chaud"
+                const col = Math.random() < 0.3 ? 'rgba(255,255,255,0.95)' : (Math.random() < 0.6 ? 'rgba(255,100,200,0.95)' : 'rgba(200,50,50,0.9)'); 
+                particles.push(new Particle(x, y, col, size, Math.cos(angle) * speed, Math.sin(angle) * speed, 0.9, 0, 30)); // Durée de vie plus courte
+            }
+        }
+        /* --- FIN AMÉLIORATION VFX --- */
+
+        /* --- AMÉLIORATION VFX : Mise à jour de createPlayerTrail --- */
+        function createPlayerTrail(x, y) {
+            if (particles.length >= MAX_PARTICLES) return;
+            const size = Math.random() * 3 + 1; // Plus petites
+            // Couleurs plasma plus vives
+            const col = Math.random() < 0.5 ? 'rgba(255, 100, 200, 0.6)' : 'rgba(150, 50, 150, 0.4)';
+            particles.push(new Particle(
+                x + rand(-5, 5), y + rand(-5, 5), 
+                col, size, 
+                rand(-0.5, 0.5), rand(-0.5, 0.5), // Moins de vélocité
+                0.92, // Friction plus forte
+                0,    // Plus de gravité négative
+                30    // Durée de vie plus courte
+            )); 
+        }
+        /* --- FIN AMÉLIORATION VFX --- */
+
+        /* ------------------------- ORBES D'XP (SUPPRIMÉES) ------------------------- */
+        // let orbPulse = 0; // SUPPRIMÉ
+        // class XPOrb { ... } // SUPPRIMÉ
+        
+        /* ------------------------- SYSTÈME D'AMÉLIORATIONS ------------------------- */
+        const UPGRADES = [
+            { id: 'damage', name: 'Puissance d\'Attaque', desc: '+1 Dégât de base par coup', icon: '💥', apply: () => playerStats.damage += 1, getLevel: () => playerStats.damage },
+            { id: 'range', name: 'Allonge Plasma', desc: '+15 Portée d\'attaque', icon: '📏', apply: () => ATTACK_RANGE += 15, getLevel: () => ATTACK_RANGE },
+            { id: 'regen', name: 'Régénération PV', desc: '+1 PV/s', icon: '💚', apply: () => playerStats.hpRegen += 1, getLevel: () => playerStats.hpRegen },
+            { id: 'hp', name: 'Endurance Max', desc: '+50 PV Max (+Soin)', icon: '🛡️', apply: () => { playerStats.maxHp += 50; playerStats.hp = playerStats.maxHp; }, getLevel: () => playerStats.maxHp },
+            { id: 'orb', name: 'Orbe Orbital', desc: '+1 orbe plasma tournant', icon: '🌀', apply: () => playerStats.orbLevel += 1, getLevel: () => playerStats.orbLevel },
+            { id: 'speed', name: 'Vitesse Cybernétique', desc: '+15% Vitesse de déplacement', icon: '⚡', apply: () => playerStats.speedMultiplier += 0.15, getLevel: () => Math.round((playerStats.speedMultiplier - 1) * 100) + '%' }
+        ];
+
+        function showUpgradeScreen() {
+            document.getElementById('upgrade-screen').style.display = 'flex';
+            document.getElementById('wave-transition-screen').style.display = 'none'; 
+            currentState = GAME_STATE.LEVEL_UP;
+            document.getElementById('current-upgrade-level').textContent = playerStats.level;
+
+            const container = document.getElementById('upgrade-options-container');
+            container.innerHTML = '';
+
+            const options = [...UPGRADES];
+            const choices = [];
+            for (let i = 0; i < 3 && options.length > 0; i++) {
+                const idx = Math.floor(Math.random() * options.length);
+                choices.push(options.splice(idx, 1)[0]);
+            }
+
+            choices.forEach(upg => {
+                const div = document.createElement('div');
+                div.className = 'upgrade-option';
+                const currentLevel = upg.getLevel();
+                let bonus = '';
+                if (upg.id === 'speed') bonus = `(Actuel: ${currentLevel})`;
+                else if (upg.id === 'orb') bonus = `(Actuel: ${currentLevel} Orbe(s))`;
+                else if (upg.id === 'range') bonus = `(Actuel: ${currentLevel}px)`;
+                else if (upg.id === 'hp') bonus = `(Actuel: ${currentLevel} PV)`;
+                else if (upg.id === 'regen') bonus = `(Actuel: ${currentLevel}/s)`;
+                else if (upg.id === 'damage') bonus = `(Actuel: ${currentLevel})`;
+
+
+                div.innerHTML = `<div class="upgrade-title">${upg.icon} ${upg.name}</div>
+                                 <div class="upgrade-description">${upg.desc} <span style="color:#ffd700;">${bonus}</span></div>`;
+                div.onclick = () => selectUpgrade(upg);
+                container.appendChild(div);
+            });
+        }
+
+        function selectUpgrade(upg) {
+            upg.apply();
+            document.getElementById('upgrade-screen').style.display = 'none';
+
+            if (enemiesKilledInWave >= enemiesToSpawn && enemies.length === 0) {
+                 startNextWave();
+            } else {
+                currentState = GAME_STATE.PLAYING;
+            }
+        }
+        
+        /* ------------------------- GAME LOGIC / WAVES ------------------------- */
+        
+        // function spawnXPOrbs(x, y, xpValue) { ... } // SUPPRIMÉ
+
+        function startNextWave() {
+            currentWave++;
+            enemiesKilledInWave = 0;
+            enemies = [];
+            // xpOrbs = xpOrbs.filter(o => o.life > 0); // SUPPRIMÉ
+            waveTransitionTimer = 0; 
+
+            const isBossWave = (currentWave % BOSS_WAVE_INTERVAL === 0);
+
+            if (isBossWave) {
+                enemiesToSpawn = 1;
+                spawnBoss(currentWave);
+            } else {
+                const enemiesCount = BASE_ENEMIES_PER_WAVE + Math.floor(currentWave * 0.75);
+                enemiesToSpawn = enemiesCount;
+                for (let i = 0; i < enemiesToSpawn; i++) {
+                    setTimeout(() => spawnEnemy(currentWave), i * 100);
+                }
+            }
+
+            updateWaveUI();
+            currentState = GAME_STATE.PLAYING;
+        }
+
+        function spawnEnemy(waveLevel) {
+            let x, y;
+            if (Math.random() < 0.5) {
+                x = Math.random() < 0.5 ? TILE_SIZE : canvas.width - TILE_SIZE;
+                y = Math.random() * (canvas.height - 2 * TILE_SIZE) + TILE_SIZE;
+            } else {
+                x = Math.random() * (canvas.width - 2 * TILE_SIZE) + TILE_SIZE;
+                y = Math.random() < 0.5 ? TILE_SIZE : canvas.height - TILE_SIZE;
+            }
+
+            const r = Math.random();
+            let e;
+            if (r < 0.06 && waveLevel >= 5) e = new Tank(x, y, waveLevel);
+            else if (r < 0.36 && waveLevel >= 3) e = new Ghost(x, y, waveLevel);
+            else e = new Enemy(x, y, waveLevel);
+
+            createExplosionParticles(x, y, 'rgba(50,10,10,0.9)');
+
+            enemies.push(e);
+        }
+
+        function spawnBoss(waveLevel) {
+            enemies.push(new Boss(canvas.width / 2, canvas.height / 2, waveLevel));
+        }
+
+        function handleEnemyDefeat(enemy, index) {
+            createExplosionParticles(enemy.x, enemy.y, enemy.color);
+            
+            /* --- AMÉLIORATION VFX : Ajout du Screen Shake à la mort --- */
+            if (enemy.type === 'Boss') {
+                triggerScreenShake(20, 8); // Grosse secousse pour le boss
+            } else {
+                triggerScreenShake(5, 2); // Petite secousse
+            }
+            /* --- FIN AMÉLIORATION VFX --- */
+
+            // MODIFIÉ: Affiche le montant d'XP gagné
+            addFloatingText(enemy.x, enemy.y, `+${enemy.xpValue} XP`, 'var(--accent-color-red)', -2, 40, 18);
+
+            // MODIFIÉ: Appelle gainXp directement au lieu de créer des orbes
+            gainXp(enemy.xpValue);
+            // spawnXPOrbs(enemy.x, enemy.y, enemy.xpValue); // SUPPRIMÉ
+
+            killCount++;
+            enemiesKilledInWave++;
+            document.getElementById('kill-count').textContent = `Monstres vaincus (total) : ${killCount}`;
+            
+            enemies.splice(index, 1);
+            
+            updateWaveUI();
+            
+            if (enemiesKilledInWave >= enemiesToSpawn && enemies.length === 0) {
+                if (currentWave === 0) return;
+                startNextWave(); 
+            }
+        }
+        
+        function tryAttack() {
+            if (currentState !== GAME_STATE.PLAYING) return;
+
+            const now = Date.now();
+            if (now - lastAttackTime >= ATTACK_COOLDOWN_MS) {
+                lastAttackTime = now;
+                playerAttackFlashTimer = 6;
+                attackRangeVisibleTimer = 12;
+
+                createAttackParticles(player.x, player.y);
+                triggerScreenShake(3, 1.5); // /* --- AMÉLIORATION VFX --- */
+
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                    const enemy = enemies[i];
+                    const dx = enemy.x - player.x;
+                    const dy = enemy.y - player.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < ATTACK_RANGE + enemy.size / 2) {
+                        const totalDmg = Math.round(playerStats.damage * playerStats.damageMultiplier);
+                        const isDead = enemy.takeDamage(totalDmg);
+                        enemy.hitEffectTimer = 10;
+                        
+                        createHitSparks(enemy.x, enemy.y, enemy.size); // MODIFIÉ: createHitGoreParticles -> createHitSparks
+
+                        if (isDead) {
+                            handleEnemyDefeat(enemy, i);
+                        }
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+            const valid = ['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd', 'z', 'q'];
+            if (valid.includes(key)) keys[key] = true;
+            else if (e.key === ' ') {
+                e.preventDefault();
+                tryAttack();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const key = e.key.toLowerCase();
+            if (keys.hasOwnProperty(key)) keys[key] = false;
+        });
+
+        function updatePlayerPosition() {
+            const speed = BASE_PLAYER_SPEED * playerStats.speedMultiplier;
+            let dx = 0, dy = 0;
+
+            if (keys.ArrowUp || keys.w || keys.z) dy -= speed;
+            if (keys.ArrowDown || keys.s) dy += speed;
+            if (keys.ArrowLeft || keys.a || keys.q) dx -= speed;
+            if (keys.ArrowRight || keys.d) dx += speed;
+
+            if (dx !== 0 && dy !== 0) {
+                const diagFactor = speed / Math.sqrt(dx * dx + dy * dy);
+                dx *= diagFactor; dy *= diagFactor;
+            }
+
+            player.x += dx; player.y += dy;
+
+            player.x = Math.max(player.width / 2, Math.min(canvas.width - player.width / 2, player.x));
+            player.y = Math.max(player.height / 2, Math.min(canvas.height - player.height / 2, player.y));
+
+            if (playerAttackFlashTimer > 0) playerAttackFlashTimer--;
+
+            if (Math.abs(dx) + Math.abs(dy) > 0.2) {
+                if (Math.random() < 0.6) createPlayerTrail(player.x, player.y);
+            }
+        }
+
+        let regenTimer = 0;
+        function updateRegen() {
+            if (playerStats.hpRegen === 0 || currentState !== GAME_STATE.PLAYING) return;
+
+            regenTimer++;
+            if (regenTimer >= 60) {
+                playerStats.hp = Math.min(playerStats.maxHp, playerStats.hp + playerStats.hpRegen);
+                if (playerStats.hpRegen > 0) addFloatingText(player.x, player.y - player.height / 2, `+${playerStats.hpRegen}`, 'lime', -1, 60, 20);
+                regenTimer = 0;
+            }
+        }
+        
+        function takeDamage(damage) {
+            if (currentState !== GAME_STATE.PLAYING) return;
+            const finalDamage = Math.max(1, damage - playerStats.defense);
+            playerStats.hp -= finalDamage;
+            addFloatingText(player.x, player.y + player.height / 2, `-${finalDamage}`, '#ff5555', -3, 50, 24);
+
+            triggerScreenShake(10, 4); // /* --- AMÉLIORATION VFX --- */
+
+            if (playerStats.hp <= 0) {
+                currentState = GAME_STATE.GAME_OVER;
+                document.getElementById('game-over-screen').style.display = 'flex';
+            }
+        }
+
+        function gainXp(amount) {
+            playerStats.xp += amount;
+            while (playerStats.xp >= playerStats.xpToNextLevel) {
+                playerStats.xp -= playerStats.xpToNextLevel;
+                playerStats.level++;
+                playerStats.xpToNextLevel = Math.floor(playerStats.xpToNextLevel * 1.2);
+                playerStats.maxHp += 10;
+                playerStats.hp = playerStats.maxHp;
+
+                playerStats.damageMultiplier *= 1.2;
+
+                addFloatingText(player.x, player.y, "LEVEL UP!", 'gold', -5, 100, 30);
+                createExplosionParticles(player.x, player.y, 'rgba(180,100,20,0.9)');
+
+                if (playerStats.level % 3 === 0) { 
+                    showUpgradeScreen(); 
+                }
+
+                return; 
+            }
+        }
+        
+        function update() {
+            if (attackRangeVisibleTimer > 0) attackRangeVisibleTimer--;
+            
+            // orbPulse += 0.05; // SUPPRIMÉ
+            // if (orbPulse > Math.PI * 2) orbPulse -= Math.PI * 2; // SUPPRIMÉ
+
+            /* --- AMÉLIORATION VFX : Mise à jour du Screen Shake --- */
+            if (screenShake.duration > 0) {
+                screenShake.duration--;
+                screenShake.x = (Math.random() - 0.5) * screenShake.magnitude;
+                screenShake.y = (Math.random() - 0.5) * screenShake.magnitude;
+            } else {
+                screenShake.x = 0;
+                screenShake.y = 0;
+                screenShake.magnitude = 0;
+            }
+            /* --- FIN AMÉLIORATION VFX --- */
+
+
+            /* Boucle de mise à jour des orbes XP (SUPPRIMÉE)
+            for (let i = xpOrbs.length - 1; i >= 0; i--) {
+                const o = xpOrbs[i];
+                o.update();
+                if (o.life <= 0) xpOrbs.splice(i, 1);
+            }
+            */
+
+            if (currentState === GAME_STATE.GAME_OVER || currentState === GAME_STATE.LEVEL_UP) return;
+
+            if (currentState === GAME_STATE.WAVE_TRANSITION){
+                waveTransitionTimer++;
+                if (waveTransitionTimer >= 180) { 
+                    document.getElementById('wave-transition-screen').style.display = 'none';
+                    startNextWave();
+                    waveTransitionTimer = 0;
+                    return; 
+                }
+                return; 
+            }
+            
+            updatePlayerPosition();
+            updateOrbs(); 
+            updateRegen();
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                enemies[i].update();
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                if (particles[i].life <= 0 || particles[i].alpha <= 0) particles.splice(i, 1);
+            }
+
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                floatingTexts[i].update();
+                if (floatingTexts[i].life <= 0) floatingTexts.splice(i, 1);
+            }
+            updateStatsPanel();
+        }
+
+        /* ------------------------- DRAWING / RENDERING ------------------------- */
+        function updateStatsPanel() {
+            document.getElementById('stat-level').textContent = `Niveau : ${playerStats.level}`;
+            const totalDamage = Math.round(playerStats.damage * playerStats.damageMultiplier);
+            document.getElementById('stat-damage').textContent = `${totalDamage} (x${playerStats.damageMultiplier.toFixed(2)})`;
+            document.getElementById('stat-speed').textContent = `x${playerStats.speedMultiplier.toFixed(2)}`;
+            document.getElementById('stat-defense').textContent = `${playerStats.defense}`;
+            document.getElementById('stat-regen').textContent = `${playerStats.hpRegen}/s`;
+            document.getElementById('stat-orbs').textContent = `${playerStats.orbLevel}`;
+        }
+
+        function updateWaveUI() {
+            document.getElementById('current-wave-display').textContent = `VAGUE : ${currentWave}`;
+            const remainingEnemies = Math.max(0, enemiesToSpawn - enemiesKilledInWave + enemies.length);
+            document.getElementById('monsters-remaining-display').textContent = `Monstres restants : ${remainingEnemies} / ${enemiesToSpawn}`;
+        }
+        
+        const ORB_RADIUS = 70;
+        const ORB_SIZE = 10;
+        const ORB_SPEED = 0.05;
+        const ORB_DAMAGE = 1;
+
+        function updateOrbs() {
+            if (playerStats.orbLevel === 0 || currentState !== GAME_STATE.PLAYING) return;
+
+            playerStats.orbRotation += ORB_SPEED;
+            if (playerStats.orbRotation >= Math.PI * 2) playerStats.orbRotation -= Math.PI * 2;
+
+            const hitEnemies = []; 
+
+            for (let i = 0; i < playerStats.orbLevel; i++) {
+                const angle = playerStats.orbRotation + (i * (Math.PI * 2 / playerStats.orbLevel));
+                const orbX = player.x + Math.cos(angle) * ORB_RADIUS;
+                const orbY = player.y + Math.sin(angle) * ORB_RADIUS;
+
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    const enemy = enemies[j];
+                    if (hitEnemies.includes(enemy)) continue;
+
+                    const dx = enemy.x - orbX;
+                    const dy = enemy.y - orbY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < ORB_SIZE + enemy.size / 2) {
+                        const isDead = enemy.takeDamage(ORB_DAMAGE);
+                        
+                        createAttackParticles(orbX, orbY);
+                        
+                        if (isDead) {
+                            handleEnemyDefeat(enemy, j);
+                        }
+                        hitEnemies.push(enemy);
+                    }
+                }
+            }
+        }
+
+        function drawOrbs() {
+            if (playerStats.orbLevel === 0) return;
+
+            for (let i = 0; i < playerStats.orbLevel; i++) {
+                const angle = playerStats.orbRotation + (i * (Math.PI * 2 / playerStats.orbLevel));
+                const orbX = player.x + Math.cos(angle) * ORB_RADIUS;
+                const orbY = player.y + Math.sin(angle) * ORB_RADIUS;
+
+                ctx.save();
+                ctx.translate(orbX, orbY);
+                ctx.beginPath();
+                ctx.arc(0, 0, ORB_SIZE, 0, Math.PI * 2);
+                
+                ctx.fillStyle = 'rgba(255,100,200,0.9)';
+                ctx.shadowColor = 'rgba(255,100,200,1)';
+                ctx.shadowBlur = 12;
+                
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function drawHUD() {
+            const hpBarWidth = 220;
+            const hpBarHeight = 22;
+            const pad = 12;
+            const x = pad, y = canvas.height - hpBarHeight - pad;
+            const hpPercent = Math.max(0, Math.min(1, playerStats.hp / playerStats.maxHp));
+
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(x, y, hpBarWidth, hpBarHeight);
+            
+            ctx.fillStyle = hpPercent > 0.5 ? '#77ff77' : hpPercent > 0.2 ? '#ffcc00' : '#ff0000';
+            ctx.shadowColor = hpPercent > 0.5 ? '#00ff00' : '#ff0000';
+            ctx.shadowBlur = 8;
+            ctx.fillRect(x, y, hpBarWidth * hpPercent, hpBarHeight);
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 12px Audiowide';
+            ctx.textAlign = 'left';
+            ctx.fillText(`PV: ${Math.floor(playerStats.hp)}/${playerStats.maxHp}`, x + 8, y + 15);
+
+            const xpBarWidth = hpBarWidth;
+            const xpBarHeight = 10;
+            const xpY = y - xpBarHeight - 6;
+            const xpPercent = Math.max(0, Math.min(1, playerStats.xp / playerStats.xpToNextLevel));
+
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(x, xpY, xpBarWidth, xpBarHeight);
+            
+            ctx.fillStyle = 'rgba(255, 51, 102, 0.95)';
+            ctx.shadowColor = 'rgba(255, 51, 102, 0.8)';
+            ctx.shadowBlur = 8;
+            ctx.fillRect(x, xpY, xpBarWidth * xpPercent, xpBarHeight);
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 10px Audiowide';
+            ctx.fillText(`Niv. ${playerStats.level} (XP: ${playerStats.xp}/${playerStats.xpToNextLevel})`, x + 8, xpY + 8);
+        }
+
+        function drawPlayer() {
+            if (attackRangeVisibleTimer > 0) {
+                ctx.save();
+                const pulse = 1 + Math.sin(Date.now() / 80) * 0.04;
+                ctx.strokeStyle = 'rgba(255,51,102,0.4)';
+                ctx.lineWidth = 2 + Math.abs(Math.sin(Date.now() / 120)) * 2;
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, ATTACK_RANGE * pulse, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            ctx.save();
+            ctx.fillStyle = (playerAttackFlashTimer > 0) ? 'white' : player.color;
+            
+            // Lueur Plasma intense et animée
+            const blurSize = playerAttackFlashTimer > 0 ? 35 : 15 + Math.sin(Date.now() / 150) * 5;
+            ctx.shadowColor = (playerAttackFlashTimer > 0) ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 51, 102, 0.8)';
+            ctx.shadowBlur = blurSize;
+
+            ctx.fillRect(player.x - player.width / 2, player.y - player.height / 2, player.width, player.height);
+            ctx.restore();
+        }
+
+        let fogOffset = 0;
+        function drawFog() {
+            fogCtx.clearRect(0, 0, fogCanvas.width, fogCanvas.height);
+            fogOffset += 0.2; // Vitesse d'animation du brouillard
+
+            const baseColor = 'rgba(255, 255, 255, 0.05)'; 
+
+            for(let i = 0; i < 4; i++) {
+                const timeFactor = Date.now() / 5000 + i * 100;
+                const wave1 = 15 * Math.sin(timeFactor * 0.5 + fogOffset * 0.1);
+                const wave2 = 10 * Math.sin(timeFactor * 0.3 + fogOffset * 0.05);
+
+                fogCtx.fillStyle = baseColor;
+                fogCtx.beginPath();
+                fogCtx.moveTo(-50, fogCanvas.height + 50);
+                
+                const points = 8;
+                for (let j = 0; j <= points; j++) {
+                    const x = (j / points) * (fogCanvas.width + 100) - 50;
+                    const y = fogCanvas.height * 0.8 + 
+                                Math.sin(x / 50 + fogOffset * 0.01 + i) * 20 + wave1 + wave2;
+                    fogCtx.lineTo(x, y);
+                }
+                
+                fogCtx.lineTo(fogCanvas.width + 50, fogCanvas.height + 50);
+                fogCtx.closePath();
+                fogCtx.fill();
+            }
+
+            // Vignette noire réaliste
+            const vignette = fogCtx.createRadialGradient(
+                fogCanvas.width / 2, fogCanvas.height / 2, 
+                100, 
+                fogCanvas.width / 2, fogCanvas.height / 2, 
+                Math.max(fogCanvas.width, fogCanvas.height) * 0.7
+            );
+            vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            vignette.addColorStop(0.75, 'rgba(0, 0, 0, 0.4)');
+            vignette.addColorStop(1, 'rgba(0, 0, 0, 0.8)');
+            fogCtx.fillStyle = vignette;
+            fogCtx.fillRect(0, 0, fogCanvas.width, fogCanvas.height);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawFog(); 
+
+            /* --- AMÉLIORATION VFX : Appliquer le Screen Shake --- */
+            ctx.save();
+            ctx.translate(screenShake.x, screenShake.y);
+            /* --- FIN AMÉLIORATION VFX --- */
+
+
+            if (currentState === GAME_STATE.PLAYING || currentState === GAME_STATE.WAVE_TRANSITION || currentState === GAME_STATE.LEVEL_UP) {
+                
+                ctx.save();
+                ctx.fillStyle = 'rgba(0,0,0,0.15)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.restore();
+
+                enemies.forEach(e => e.draw());
+                // xpOrbs.forEach(o => o.draw()); // SUPPRIMÉ
+
+                particles.forEach(p => p.draw());
+
+                drawPlayer();
+                drawOrbs();
+
+                // L'HUD et les textes flottants sont dessinés HORS de la secousse
+                // pour qu'ils restent stables.
+                // floatingTexts.forEach(t => t.draw()); // Déplacé
+            }
+            
+            /* --- AMÉLIORATION VFX : Restaurer le contexte après la secousse --- */
+            ctx.restore();
+            /* --- FIN AMÉLIORATION VFX --- */
+
+            // Dessiner l'HUD et les textes flottants *après* la restauration
+            // pour qu'ils ne soient pas affectés par la secousse
+            if (currentState === GAME_STATE.PLAYING || currentState === GAME_STATE.WAVE_TRANSITION || currentState === GAME_STATE.LEVEL_UP) {
+                 drawHUD();
+                 floatingTexts.forEach(t => t.draw());
+            }
+        }
+
+        /* ------------------------- GAME LOOP ------------------------- */
+        function gameLoop() {
+            requestAnimationFrame(gameLoop);
+            update();
+            draw();
+        }
+        
+        document.getElementById('game-over-screen').addEventListener('click', () => location.reload());
+
+        /* ------------------------- INIT : START ------------------------- */
+        
+/* ----------- FOND SPATIAL PROFOND (Étoiles + Nébuleuse) ----------- */
+const nebula = document.getElementById('nebula');
+const nctx = nebula.getContext('2d');
+const starfield = document.getElementById('starfield');
+const sctx = starfield.getContext('2d');
+
+function resizeBackground() {
+  starfield.width = window.innerWidth;
+  starfield.height = window.innerHeight;
+  nebula.width = window.innerWidth;
+  nebula.height = window.innerHeight;
+}
+resizeBackground();
+window.addEventListener('resize', resizeBackground);
+
+const LAYERS = [
+  { count: 80, speed: 0.2, size: 0.8 },
+  { count: 100, speed: 0.6, size: 1.2 },
+  { count: 70, speed: 1.2, size: 1.8 }
+];
+
+const stars = LAYERS.flatMap(layer =>
+  Array.from({ length: layer.count }, () => ({
+    x: Math.random() * starfield.width,
+    y: Math.random() * starfield.height,
+    z: Math.random() * 1000,
+    speed: layer.speed,
+    size: layer.size
+  }))
+);
+
+function drawStars() {
+  sctx.fillStyle = 'rgba(0, 0, 20, 1)';
+  sctx.fillRect(0, 0, starfield.width, starfield.height);
+  for (const star of stars) {
+    star.z -= star.speed;
+    if (star.z <= 0) star.z = 1000;
+    const k = 128.0 / star.z;
+    const px = (star.x - starfield.width / 2) * k + starfield.width / 2;
+    const py = (star.y - starfield.height / 2) * k + starfield.height / 2;
+    if (px < 0 || px >= starfield.width || py < 0 || py >= starfield.height) continue;
+    const brightness = 0.5 + 0.5 * Math.sin(Date.now() / 1000 + star.x);
+    sctx.fillStyle = `rgba(150, 220, 255, ${brightness})`;
+    sctx.beginPath();
+    sctx.arc(px, py, star.size * (1 - star.z / 1000), 0, Math.PI * 2);
+    sctx.fill();
+  }
+  requestAnimationFrame(drawStars);
+}
+
+// Nébuleuse cyan mystique
+let t = 0;
+function drawNebula() {
+  const w = nebula.width, h = nebula.height;
+  const imageData = nctx.createImageData(w, h);
+  const data = imageData.data;
+  for (let y = 0; y < h; y += 3) {
+    for (let x = 0; x < w; x += 3) {
+      const nx = x / w - 0.5, ny = y / h - 0.5;
+      const v = Math.sin((nx * 6 + t) * 0.6) + Math.cos((ny * 6 - t) * 0.6);
+      const c = Math.max(0, Math.min(255, 180 + 60 * v));
+      const idx = (y * w + x) * 4;
+      data[idx] = 0;
+      data[idx + 1] = c;
+      data[idx + 2] = 255;
+      data[idx + 3] = 8; 
+    }
+  }
+  nctx.putImageData(imageData, 0, 0);
+  t += 0.003; 
+  requestAnimationFrame(drawNebula);
+}
+
+drawStars();
+drawNebula();
+
+startNextWave();
+        gameLoop();
+
+        /* End of script */
+    </script>
+</body>
+</html>
